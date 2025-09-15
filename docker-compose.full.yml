@@ -10,8 +10,7 @@ services:
       - "8000:8000"
     volumes:
       - ./data:/app/data
-    depends_on:
-      - postgres
+      - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
