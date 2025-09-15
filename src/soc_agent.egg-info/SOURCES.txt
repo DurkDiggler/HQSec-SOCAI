@@ -2,8 +2,10 @@ README.md
 pyproject.toml
 src/soc_agent/__init__.py
 src/soc_agent/analyzer.py
+src/soc_agent/api.py
 src/soc_agent/autotask.py
 src/soc_agent/config.py
+src/soc_agent/database.py
 src/soc_agent/logging.py
 src/soc_agent/models.py
 src/soc_agent/notifiers.py

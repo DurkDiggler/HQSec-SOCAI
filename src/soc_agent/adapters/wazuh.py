@@ -9,13 +9,17 @@ def normalize_wazuh_event(event: Dict[str, Any]) -> Dict[str, Any]:
     desc = (rule.get("description") or "").lower()
     if "authentication failed" in desc:
         event_type = "auth_failed"
+    elif "malware detected" in desc:
+        event_type = "malware_detected"
+    elif "critical" in desc:
+        event_type = "critical_event"
     else:
-        event_type = desc or "unknown"
+        event_type = "unknown"
 
     return {
         "source": "wazuh",
         "event_type": event_type,
-        "severity": int(rule.get("level", 0)),
+        "severity": min(int(rule.get("level", 0)), 10),
         "timestamp": event.get("@timestamp"),
         "message": event.get("full_log") or rule.get("description"),
         "ip": data.get("srcip"),
