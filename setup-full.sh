@@ -31,7 +31,14 @@ mkdir -p data certs logs
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then
     echo "📝 Creating .env file..."
-    cp .env.example .env
+    if [ -f .env.sample ]; then
+        cp .env.sample .env
+    elif [ -f .env.example ]; then
+        cp .env.example .env
+    else
+        echo "❌ No .env.sample or .env.example file found!"
+        exit 1
+    fi
     
     # Generate random passwords
     POSTGRES_PASSWORD=$(openssl rand -base64 32)

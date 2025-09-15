@@ -39,7 +39,7 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
    ```bash
    git clone https://github.com/DurkDiggler/SOCAI.git
    cd SOCAI
-   cp .env.example .env
+   cp .env.sample .env
    # Edit .env with your configuration
    ```
 
@@ -63,7 +63,7 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 
 2. **Configure environment**
    ```bash
-   cp .env.example .env
+   cp .env.sample .env
    # Edit .env with your configuration
    ```
 
@@ -74,7 +74,7 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 
 ## 🔧 Configuration
 
-The service is configured via environment variables. See `.env.example` for all available options:
+The service is configured via environment variables. See `.env.sample` for all available options:
 
 ### Essential Configuration
 
