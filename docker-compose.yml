@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    image: soc-agent:latest
+    env_file: .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+  maildev:
+    image: maildev/maildev:latest
+    ports:
+      - "1080:1080"   # UI
+      - "1025:1025"   # SMTP
+    restart: unless-stopped
