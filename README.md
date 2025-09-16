@@ -11,6 +11,8 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 - **Security Hardened**: Rate limiting, input validation, HMAC authentication, CORS support
 - **Production Ready**: Comprehensive logging, metrics, health checks, caching, and retry logic
 - **Docker Native**: Full Docker and Docker Compose support with multi-stage builds
+- **Cross-Platform**: Windows PowerShell scripts, Linux bash scripts, and macOS support
+- **Web Interface**: Modern React dashboard for alert management and visualization
 - **Well Tested**: Comprehensive test suite with security, integration, and unit tests
 
 ## 🛡️ Security Features
@@ -31,6 +33,11 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 - Docker & Docker Compose (recommended)
 - Threat intelligence API keys (optional but recommended)
 
+### Platform Support
+- **Linux**: Full support with Docker and manual installation
+- **Windows**: Full support with PowerShell scripts and Docker Desktop
+- **macOS**: Full support with Docker and manual installation
+
 ## 🚀 Quick Start
 
 ### Using Docker Compose (Recommended)
@@ -39,7 +46,7 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
    ```bash
    git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
    cd HQSec-SOCAI
-   cp .env.sample .env
+   cp env.example .env
    # Edit .env with your configuration
    ```
 
@@ -63,7 +70,7 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 
 2. **Configure environment**
    ```bash
-   cp .env.sample .env
+   cp env.example .env
    # Edit .env with your configuration
    ```
 
@@ -71,6 +78,58 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
    ```bash
    uvicorn soc_agent.webapp:app --host 0.0.0.0 --port 8000
    ```
+
+## 🪟 Windows Deployment
+
+### Backend Only (PowerShell)
+1. **Run the setup script**
+   ```powershell
+   .\setup-windows.ps1
+   ```
+
+2. **Or use batch file**
+   ```cmd
+   setup-windows.bat
+   ```
+
+3. **Test the deployment**
+   ```powershell
+   .\demo-windows.ps1
+   ```
+
+### Full Stack with Web Interface (PowerShell)
+1. **Run the full-stack setup**
+   ```powershell
+   .\setup-windows-full.ps1
+   ```
+
+2. **Or use batch file**
+   ```cmd
+   setup-windows-full.bat
+   ```
+
+3. **Test the full deployment**
+   ```powershell
+   .\demo-windows-full.ps1
+   ```
+
+### Windows Prerequisites
+- **PowerShell 5.1+** or **PowerShell Core 7+**
+- **Docker Desktop** for Windows
+- **Node.js 18+** (for full-stack deployment)
+- **Git** for cloning the repository
+
+### Windows URLs
+- **Backend API**: http://localhost:8000
+- **Web Interface**: http://localhost:3000 (full-stack only)
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/healthz
+
+### Windows Troubleshooting
+- Ensure Docker Desktop is running
+- Check Windows Defender firewall settings
+- Verify PowerShell execution policy: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+- For full-stack: Ensure Node.js is installed and in PATH
 
 ## 🔧 Configuration
 
@@ -276,6 +335,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - **Issues**: Report bugs and request features via GitHub Issues
 - **Documentation**: Check the `/docs` endpoint when running the service
+- **Windows Users**: See `WINDOWS_PRESENTATION_GUIDE.md` for detailed Windows setup instructions
+- **Quick Reference**: See `WINDOWS_README.md` for Windows-specific quick start
 - **Security**: Report security issues privately to security@example.com
 
 ## 🔄 Changelog
