@@ -11,6 +11,11 @@ dependencies = [
   "requests>=2.32",
   "pydantic>=2.7",
   "pydantic-settings>=2.4",
+  "sqlalchemy>=2.0",
+  "alembic>=1.12",
+  "cryptography>=41.0",
+  "python-multipart>=0.0.6",
+  "urllib3>=2.0",
 ]
 
 [project.optional-dependencies]

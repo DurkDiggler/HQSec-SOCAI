@@ -170,7 +170,7 @@ def save_alert(
         source=event_data.get("source"),
         event_type=event_data.get("event_type"),
         severity=event_data.get("severity", 0),
-        timestamp=datetime.fromisoformat(event_data.get("timestamp", datetime.utcnow().isoformat()).replace("Z", "+00:00")) if event_data.get("timestamp") else datetime.utcnow(),
+        timestamp=datetime.fromisoformat(event_data.get("timestamp").replace("Z", "+00:00")) if event_data.get("timestamp") else datetime.utcnow(),
         message=event_data.get("message"),
         ip=event_data.get("ip"),
         username=event_data.get("username"),
@@ -262,9 +262,9 @@ def get_alert_statistics(db: Session, days: int = 7) -> Dict[str, Any]:
     """Get alert statistics for dashboard."""
     
     # Get date range
+    from datetime import timedelta
     end_date = datetime.utcnow()
-    start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    start_date = start_date.replace(day=start_date.day - days)
+    start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days)
     
     # Total alerts
     total_alerts = db.query(Alert).filter(Alert.created_at >= start_date).count()
@@ -320,7 +320,7 @@ def get_alert_statistics(db: Session, days: int = 7) -> Dict[str, Any]:
     
     # Recent alerts (last 24 hours)
     recent_alerts = db.query(Alert).filter(
-        Alert.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        Alert.created_at >= datetime.utcnow() - timedelta(hours=24)
     ).count()
     
     return {

@@ -123,6 +123,8 @@ def metrics():
     if not SETTINGS.enable_metrics:
         raise HTTPException(status_code=404, detail="Metrics disabled")
     
+    from .intel.client import intel_client
+    
     return {
         "requests_total": sum(len(requests) for requests in rate_limit_storage.values()),
         "active_clients": len(rate_limit_storage),
@@ -206,6 +208,7 @@ async def webhook(req: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Analysis failed")
 
     # Save alert to database
+    alert = None
     try:
         db = next(get_db())
         alert = save_alert(db, payload.model_dump(), result, {})
@@ -257,7 +260,7 @@ async def webhook(req: Request):
 
     # Update alert with action results
     try:
-        if 'alert' in locals():
+        if alert:
             alert.email_sent = actions.get("email", {}).get("ok", False)
             alert.ticket_created = actions.get("autotask_ticket", {}).get("ok", False)
             if actions.get("autotask_ticket", {}).get("ok") and actions.get("autotask_ticket", {}).get("response"):

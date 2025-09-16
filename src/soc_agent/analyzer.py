@@ -88,7 +88,9 @@ def extract_iocs(event: Dict[str, Any]) -> Dict[str, List[str]]:
     domains = sorted(set(domains))
     
     # Filter out private IPs if configured
-    if not SETTINGS.enable_caching:  # Only filter private IPs if not caching (for testing)
+    # Note: In production, you might want to keep private IPs for internal threat hunting
+    # but filter them for external threat intelligence lookups
+    if SETTINGS.enable_caching:  # Filter private IPs when caching is enabled
         ips = [ip for ip in ips if not is_private_ip(ip)]
     
     logger.debug(f"Extracted IOCs: {len(ips)} IPs, {len(domains)} domains")
