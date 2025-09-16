@@ -1,8 +1,152 @@
-# SOC Agent - Security Operations Center Webhook Analyzer
+# SOC Agent - Security Operations Center
 
-A robust FastAPI webhook service that ingests security events, enriches IOCs with threat intelligence (OTX, VirusTotal, AbuseIPDB), scores them using configurable algorithms, and triggers appropriate responses (email notifications or Autotask tickets). Built with security-first principles, comprehensive testing, and production-ready features.
+**Choose Your Setup Method - All Options Available**
 
-## 🚀 Features
+## 🎯 **Quick Start (Choose One)**
+
+### **🚀 Option 1: Docker (One-Click) - RECOMMENDED**
+**Perfect for:** Stakeholders, demos, production
+
+**Windows:**
+```bash
+# 1. Install Docker Desktop from https://docker.com
+# 2. Double-click START-SOC-AGENT.bat
+# 3. Open http://localhost:3000
+```
+
+**Linux:**
+```bash
+# 1. Install Docker and Docker Compose
+# 2. Run: docker compose up --build
+# 3. Open http://localhost:3000
+```
+
+### **🚀 Option 2: Native Installation (No Docker)**
+**Perfect for:** Developers, lightweight deployment
+
+**Windows:**
+```powershell
+# 1. Install Python 3.10+ and Node.js 18+
+# 2. Run setup-windows-native.ps1
+# 3. Double-click start-soc-agent.bat
+# 4. Open http://localhost:3000
+```
+
+**Linux:**
+```bash
+# 1. Install Python 3.10+ and Node.js 18+
+# 2. Run: ./setup-linux-native.sh
+# 3. Run: ./start-soc-agent.sh
+# 4. Open http://localhost:3000
+```
+
+### **🚀 Option 3: Docker Compose (Production)**
+**Perfect for:** Production servers, advanced users
+
+**Windows & Linux:**
+```bash
+# 1. Install Docker and Docker Compose
+# 2. Run: docker compose up --build
+# 3. Open http://localhost:3000
+```
+
+### **🚀 Option 4: Manual Installation (Advanced)**
+**Perfect for:** Custom deployments, development
+```bash
+# See ADVANCED_SETUP.md for full manual setup
+```
+
+---
+
+## 📋 **What You Get (All Methods)**
+
+- ✅ **Modern Web Dashboard** - Professional SOC interface
+- ✅ **Threat Intelligence** - OTX, VirusTotal, AbuseIPDB integration
+- ✅ **Multi-Vendor Support** - Wazuh, CrowdStrike, custom formats
+- ✅ **Real-time Alerts** - Live security event processing
+- ✅ **Email Notifications** - Automated incident response
+- ✅ **API Integration** - Connect to any SIEM or security tool
+
+---
+
+## 🎯 **Which Method Should I Choose?**
+
+| Your Situation | Recommended Method | Time to Running |
+|----------------|-------------------|-----------------|
+| **Stakeholder/Demo** | Option 1 (Docker) | 5 minutes |
+| **Developer/Testing** | Option 2 (Native) | 3 minutes |
+| **Production/Server** | Option 3 (Docker Compose) | 5 minutes |
+| **Custom Setup** | Option 4 (Manual) | 10+ minutes |
+
+**Not sure?** Start with **Option 1 (Docker)** - it's the easiest!
+
+---
+
+## 🚀 **Quick Decision Guide**
+
+### **Choose Option 1 (Docker) if:**
+- ✅ You want the easiest setup
+- ✅ You're demonstrating to stakeholders
+- ✅ You want consistent results
+- ✅ You don't want to manage dependencies
+
+### **Choose Option 2 (Native) if:**
+- ✅ You don't want to install Docker
+- ✅ You're a developer
+- ✅ You want faster startup
+- ✅ You prefer lightweight deployment
+
+### **Choose Option 3 (Docker Compose) if:**
+- ✅ You're deploying to production
+- ✅ You want full control
+- ✅ You need advanced features
+- ✅ You're comfortable with command line
+
+### **Choose Option 4 (Manual) if:**
+- ✅ You need custom configuration
+- ✅ You're developing new features
+- ✅ You want to understand every detail
+- ✅ You have specific requirements
+
+---
+
+## 📚 **Documentation**
+
+- **`GET-STARTED.md`** - Detailed setup guide for all methods
+- **`QUICKSTART.md`** - 3-step setup for each method
+- **`ADVANCED_SETUP.md`** - Advanced options and troubleshooting
+- **`ENTERPRISE-SETUP.md`** - Enterprise-grade setup guide
+
+---
+
+## 🆘 **Need Help?**
+
+### **Setup Issues:**
+- **Docker not working?** → Try Option 2 (Native)
+- **Python/Node issues?** → Try Option 1 (Docker)
+- **Still stuck?** → See `ENTERPRISE-SETUP.md`
+
+### **All Methods Available:**
+- **Option 1:** `START-SOC-AGENT.bat` (Docker)
+- **Option 2:** `setup-windows-native.ps1` (Native)
+- **Option 3:** `docker compose up --build` (Docker Compose)
+- **Option 4:** Manual setup (Advanced)
+
+---
+
+## 🎉 **Ready to Start?**
+
+**For most users:** Double-click `START-SOC-AGENT.bat` and open http://localhost:3000
+
+**For developers:** Run `setup-windows-native.ps1` and double-click `start-soc-agent.bat`
+
+**For production:** Run `docker compose up --build` and open http://localhost:3000
+
+**All methods work!** Choose what's best for your situation.
+
+---
+
+## 🔧 **Features**
 
 - **Multi-Vendor Support**: Auto-detects and normalizes Wazuh, CrowdStrike, and custom event formats
 - **Threat Intelligence**: Enriches IOCs with OTX, VirusTotal, and AbuseIPDB APIs
@@ -13,271 +157,9 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 - **Web Interface**: Modern React dashboard for alert management and visualization
 - **Well Tested**: Comprehensive test suite with security, integration, and unit tests
 
-## 🛡️ Security Features
+---
 
-- **Input Validation**: Comprehensive validation of all inputs with Pydantic models
-- **Rate Limiting**: Configurable rate limiting per client IP
-- **Authentication**: Optional shared secret and HMAC signature verification
-- **Request Size Limits**: Protection against large payload attacks
-- **XSS Protection**: Detection and blocking of malicious content
-- **IP Validation**: Proper IPv4/IPv6 validation using ipaddress module
-- **CORS Support**: Configurable Cross-Origin Resource Sharing
-- **Security Headers**: Proper HTTP security headers
-- **Logging**: Comprehensive security event logging
-
-## 📋 Requirements
-
-- **Docker & Docker Compose** (recommended for all platforms)
-- **Python 3.10+** (for manual installation)
-- **Node.js 18+** (for frontend development)
-- **Threat intelligence API keys** (optional but recommended)
-
-### Platform Support
-- **Windows**: Docker Desktop + PowerShell/Command Prompt OR Native Python/Node.js
-- **Linux**: Docker + Docker Compose + Bash
-- **macOS**: Docker Desktop + Terminal
-
-## 🚀 Quick Start
-
-### Option 1: Docker (Recommended - All Platforms)
-
-#### 1. Clone and Configure
-```bash
-git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
-cd HQSec-SOCAI
-cp env.example .env
-# Edit .env with your configuration
-```
-
-#### 2. Start Everything
-```bash
-docker compose up --build
-```
-
-#### 3. Access the Services
-- **Web Interface**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Email Testing**: http://localhost:1080
-- **Health Check**: http://localhost:8000/healthz
-
-### Option 2: Native Windows (No Docker Required)
-
-#### 1. Clone and Setup
-```powershell
-git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
-cd HQSec-SOCAI
-.\setup-windows-native.ps1
-```
-
-#### 2. Start Everything
-```powershell
-# Double-click this file or run:
-.\start-soc-agent.bat
-```
-
-#### 3. Access the Services
-- **Web Interface**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/healthz
-
-### Verify Deployment
-```bash
-# Linux/macOS
-curl http://localhost:8000/healthz
-
-# Windows PowerShell
-Invoke-WebRequest http://localhost:8000/healthz
-```
-
-## 🔧 Configuration
-
-The service is configured via environment variables. See `env.example` for all available options:
-
-### Essential Configuration
-```bash
-# Server
-APP_HOST=0.0.0.0
-APP_PORT=8000
-
-# Security
-RATE_LIMIT_REQUESTS=1000
-RATE_LIMIT_WINDOW=3600
-MAX_REQUEST_SIZE=1048576
-
-# Email (if using email notifications)
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-EMAIL_FROM=soc-agent@example.com
-EMAIL_TO=soc@example.com
-
-# Autotask (if using ticket creation)
-AT_BASE_URL=https://your-instance.autotask.net
-AT_API_INTEGRATION_CODE=your-code
-AT_USERNAME=your-username
-AT_SECRET=your-secret
-AT_ACCOUNT_ID=12345
-AT_QUEUE_ID=67890
-
-# Threat Intelligence (optional but recommended)
-OTX_API_KEY=your-otx-key
-VT_API_KEY=your-virustotal-key
-ABUSEIPDB_API_KEY=your-abuseipdb-key
-```
-
-## 📡 API Endpoints
-
-### Webhook Endpoint
-- **POST** `/webhook` - Main webhook for security events
-- **Authentication**: Optional shared secret or HMAC signature
-- **Rate Limited**: Configurable per-client rate limiting
-- **Content-Type**: `application/json`
-
-### Health & Monitoring
-- **GET** `/healthz` - Health check endpoint
-- **GET** `/readyz` - Readiness check endpoint
-- **GET** `/metrics` - Basic metrics (if enabled)
-- **GET** `/` - Service information
-
-## 🔌 Vendor Adapters
-
-The service automatically detects and normalizes events from:
-
-### Wazuh
-```json
-{
-  "rule": {"id": 5710, "level": 7, "description": "sshd: authentication failed"},
-  "agent": {"name": "srv01"},
-  "data": {"srcip": "203.0.113.4", "srcuser": "bob"},
-  "full_log": "Failed password from 203.0.113.4 port 22 ssh2"
-}
-```
-
-### CrowdStrike
-```json
-{
-  "eventType": "AuthActivityAuthFail",
-  "Severity": 5,
-  "LocalIP": "198.51.100.10",
-  "UserName": "alice",
-  "Name": "Authentication failed"
-}
-```
-
-### Custom Format
-```json
-{
-  "source": "custom",
-  "event_type": "auth_failed",
-  "severity": 5,
-  "timestamp": "2023-01-01T00:00:00Z",
-  "message": "Authentication failed",
-  "ip": "1.2.3.4",
-  "username": "admin"
-}
-```
-
-## 🧪 Testing
-
-### Run All Tests
-```bash
-make test
-```
-
-### Run Specific Test Categories
-```bash
-# Security tests
-pytest tests/test_security.py -v
-
-# Integration tests
-pytest tests/test_integration.py -v
-
-# Model validation tests
-pytest tests/test_models.py -v
-```
-
-### Test Coverage
-```bash
-pytest --cov=soc_agent --cov-report=html
-```
-
-## 🔒 Security Best Practices
-
-1. **Use HTTPS**: Always use TLS in production
-2. **Enable Authentication**: Set `WEBHOOK_SHARED_SECRET` or `WEBHOOK_HMAC_SECRET`
-3. **Configure CORS**: Set appropriate `CORS_ORIGINS`
-4. **Rate Limiting**: Adjust `RATE_LIMIT_REQUESTS` based on your needs
-5. **Monitor Logs**: Enable structured logging and monitor for security events
-6. **Regular Updates**: Keep dependencies updated
-7. **Network Security**: Use firewalls and network segmentation
-8. **API Keys**: Rotate threat intelligence API keys regularly
-
-## 🐳 Docker Deployment
-
-### Production Docker Compose
-```yaml
-version: '3.8'
-services:
-  soc-agent:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - LOG_LEVEL=INFO
-      - ENABLE_METRICS=true
-    volumes:
-      - ./logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
-
-### TLS with Reverse Proxy
-```yaml
-version: '3.8'
-services:
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./certs:/etc/nginx/certs
-    depends_on:
-      - soc-agent
-  
-  soc-agent:
-    build: .
-    expose:
-      - "8000"
-    environment:
-      - LOG_LEVEL=INFO
-```
-
-## 📊 Monitoring & Observability
-
-### Metrics
-- Request count and rate limiting statistics
-- Cache hit/miss ratios
-- Active client count
-- Error rates
-
-### Logging
-- Structured JSON logging
-- Security event logging
-- Performance metrics
-- Error tracking
-
-### Health Checks
-- Service health (`/healthz`)
-- Readiness checks (`/readyz`)
-- Dependency health monitoring
-
-## 🤝 Contributing
+## 🤝 **Contributing**
 
 1. Fork the repository
 2. Create a feature branch
@@ -286,34 +168,17 @@ services:
 5. Ensure all tests pass
 6. Submit a pull request
 
-## 📄 License
+---
+
+## 📄 **License**
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
+---
+
+## 🆘 **Support**
 
 - **Issues**: Report bugs and request features via GitHub Issues
 - **Documentation**: Check the `/docs` endpoint when running the service
 - **Advanced Setup**: See `ADVANCED_SETUP.md` for manual installation and advanced options
 - **Security**: Report security issues privately to security@example.com
-
-## 🔄 Changelog
-
-### v1.2.0 (Current)
-- Enhanced security features
-- Improved input validation
-- Added comprehensive testing
-- Better error handling and logging
-- Caching and retry logic
-- Rate limiting and CORS support
-- Production-ready configuration
-- Unified Docker Compose setup
-
-### v1.1.0
-- Initial multi-vendor support
-- Basic threat intelligence integration
-- Docker support
-
-### v1.0.0
-- Initial release
-- Basic webhook functionality

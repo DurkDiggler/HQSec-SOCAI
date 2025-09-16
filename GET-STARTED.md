@@ -1,8 +1,8 @@
-# Quick Start Guide
+# Get Started with SOC Agent
 
 **Choose Your Setup Method - All Options Available**
 
-## 🎯 **Quick Decision**
+## 🎯 **Quick Decision Guide**
 
 | Your Situation | Recommended Method | Time to Running |
 |----------------|-------------------|-----------------|
@@ -18,24 +18,27 @@
 ### **Perfect For:** Stakeholders, demos, production, consistency
 
 ### **Windows:**
-**Prerequisites:** Docker Desktop
-**3-Step Setup:**
+**What You Need:** Docker Desktop
+**Setup Steps:**
 1. **Install Docker Desktop** from https://docker.com
-2. **Double-click** `START-SOC-AGENT.bat`
-3. **Open** http://localhost:3000
+2. **Start Docker Desktop**
+3. **Double-click** `START-SOC-AGENT.bat`
+4. **Wait 2-3 minutes**
+5. **Open** http://localhost:3000
 
 ### **Linux:**
-**Prerequisites:** Docker and Docker Compose
-**3-Step Setup:**
+**What You Need:** Docker and Docker Compose
+**Setup Steps:**
 1. **Install Docker and Docker Compose**
 2. **Run:** `docker compose up --build`
-3. **Open** http://localhost:3000
+3. **Wait 2-3 minutes**
+4. **Open** http://localhost:3000
 
 ### **That's It!** ✅
 - Zero configuration required
 - Works identically on every machine
 - Professional error handling
-- All services included
+- All services included (database, cache, email testing)
 
 ---
 
@@ -44,18 +47,23 @@
 ### **Perfect For:** Developers, lightweight deployment, testing
 
 ### **Windows:**
-**Prerequisites:** Python 3.10+ and Node.js 18+
-**3-Step Setup:**
-1. **Install Python 3.10+ and Node.js 18+**
-2. **Run** `setup-windows-native.ps1`
-3. **Double-click** `start-soc-agent.bat` and open http://localhost:3000
+**What You Need:** Python 3.10+ and Node.js 18+
+**Setup Steps:**
+1. **Install Python 3.10+** from https://python.org
+2. **Install Node.js 18+** from https://nodejs.org
+3. **Right-click** `setup-windows-native.ps1` → "Run with PowerShell"
+4. **Wait 2-3 minutes**
+5. **Double-click** `start-soc-agent.bat`
+6. **Open** http://localhost:3000
 
 ### **Linux:**
-**Prerequisites:** Python 3.10+ and Node.js 18+
-**3-Step Setup:**
-1. **Install Python 3.10+ and Node.js 18+**
+**What You Need:** Python 3.10+ and Node.js 18+
+**Setup Steps:**
+1. **Install Python 3.10+** and **Node.js 18+** using your package manager
 2. **Run:** `./setup-linux-native.sh`
-3. **Run:** `./start-soc-agent.sh` and open http://localhost:3000
+3. **Wait 2-3 minutes**
+4. **Run:** `./start-soc-agent.sh`
+5. **Open** http://localhost:3000
 
 ### **That's It!** ✅
 - No Docker required
@@ -70,11 +78,13 @@
 ### **Perfect For:** Production servers, advanced users, full control
 
 ### **Windows & Linux:**
-**Prerequisites:** Docker and Docker Compose
-**3-Step Setup:**
+**What You Need:** Docker and Docker Compose
+**Setup Steps:**
 1. **Install Docker and Docker Compose**
-2. **Run:** `docker compose up --build`
-3. **Open** http://localhost:3000
+2. **Open Terminal/Command Prompt** in SOC Agent folder
+3. **Run:** `docker compose up --build`
+4. **Wait 3-5 minutes**
+5. **Open** http://localhost:3000
 
 ### **That's It!** ✅
 - Full production environment
@@ -88,7 +98,7 @@
 
 ### **Perfect For:** Custom deployments, development, full control
 
-### **Prerequisites:**
+### **What You Need:**
 - Python 3.10+
 - Node.js 18+
 - PostgreSQL (optional)
@@ -98,6 +108,7 @@
 1. **Install dependencies** (see `ADVANCED_SETUP.md`)
 2. **Configure environment** (edit `.env` file)
 3. **Start services** manually
+4. **Customize** as needed
 
 ### **Full Control!** ✅
 - Complete customization
@@ -107,27 +118,27 @@
 
 ---
 
-## 🎯 **Which Method Should I Choose?**
+## 🆘 **Which Method Should I Choose?**
 
-### **Choose Method 1 (Docker) if:**
+### **Choose Docker (Method 1) if:**
 - ✅ You want the easiest setup
 - ✅ You're demonstrating to stakeholders
 - ✅ You want consistent results
 - ✅ You don't want to manage dependencies
 
-### **Choose Method 2 (Native) if:**
+### **Choose Native Windows (Method 2) if:**
 - ✅ You don't want to install Docker
 - ✅ You're a developer
 - ✅ You want faster startup
 - ✅ You prefer lightweight deployment
 
-### **Choose Method 3 (Docker Compose) if:**
+### **Choose Docker Compose (Method 3) if:**
 - ✅ You're deploying to production
 - ✅ You want full control
 - ✅ You need advanced features
 - ✅ You're comfortable with command line
 
-### **Choose Method 4 (Manual) if:**
+### **Choose Manual (Method 4) if:**
 - ✅ You need custom configuration
 - ✅ You're developing new features
 - ✅ You want to understand every detail
@@ -153,6 +164,11 @@
 - **Docker not working?** → Try Method 2 (Native)
 - **Python/Node issues?** → Try Method 1 (Docker)
 - **Still stuck?** → See `ENTERPRISE-SETUP.md`
+
+### **Advanced Options:**
+- **Custom configuration?** → See `ADVANCED_SETUP.md`
+- **Production deployment?** → See `ADVANCED_SETUP.md`
+- **Development setup?** → See `ADVANCED_SETUP.md`
 
 ### **All Methods Available:**
 - **Method 1:** `START-SOC-AGENT.bat` (Docker)
