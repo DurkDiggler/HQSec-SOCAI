@@ -1,4 +1,4 @@
-# SOC Agent - Enhanced Security Operations Center Webhook Analyzer
+# SOC Agent - Security Operations Center Webhook Analyzer
 
 A robust FastAPI webhook service that ingests security events, enriches IOCs with threat intelligence (OTX, VirusTotal, AbuseIPDB), scores them using configurable algorithms, and triggers appropriate responses (email notifications or Autotask tickets). Built with security-first principles, comprehensive testing, and production-ready features.
 
@@ -10,8 +10,6 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 - **Multiple Actions**: Email notifications and Autotask ticket creation
 - **Security Hardened**: Rate limiting, input validation, HMAC authentication, CORS support
 - **Production Ready**: Comprehensive logging, metrics, health checks, caching, and retry logic
-- **Docker Native**: Full Docker and Docker Compose support with multi-stage builds
-- **Cross-Platform**: Windows PowerShell scripts, Linux bash scripts, and macOS support
 - **Web Interface**: Modern React dashboard for alert management and visualization
 - **Well Tested**: Comprehensive test suite with security, integration, and unit tests
 
@@ -29,121 +27,54 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 
 ## 📋 Requirements
 
-- Python 3.10+
-- Docker & Docker Compose (recommended)
-- Threat intelligence API keys (optional but recommended)
-
-### Platform Support
-- **Linux**: Full support with Docker and manual installation
-- **Windows**: Full support with PowerShell scripts and Docker Desktop
-- **macOS**: Full support with Docker and manual installation
+- **Docker & Docker Compose** (recommended)
+- **Python 3.10+** (for manual installation)
+- **Node.js 18+** (for frontend development)
+- **Threat intelligence API keys** (optional but recommended)
 
 ## 🚀 Quick Start
 
-### Using Docker Compose (Recommended)
+### 1. Clone and Configure
+```bash
+git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
+cd HQSec-SOCAI
+cp env.example .env
+# Edit .env with your configuration
+```
 
-1. **Clone and configure**
-   ```bash
-   git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
-   cd HQSec-SOCAI
-   cp env.example .env
-   # Edit .env with your configuration
-   ```
+### 2. Start Everything
+```bash
+docker compose up --build
+```
 
-2. **Start the service**
-   ```bash
-   docker compose up --build
-   ```
-
-3. **Verify deployment**
-   ```bash
-   curl http://localhost:8000/healthz
-   curl http://localhost:8000/readyz
-   ```
-
-### Manual Installation
-
-1. **Install dependencies**
-   ```bash
-   pip install -e .[dev]
-   ```
-
-2. **Configure environment**
-   ```bash
-   cp env.example .env
-   # Edit .env with your configuration
-   ```
-
-3. **Run the service**
-   ```bash
-   uvicorn soc_agent.webapp:app --host 0.0.0.0 --port 8000
-   ```
-
-## 🪟 Windows Deployment
-
-### Backend Only (PowerShell)
-1. **Run the setup script**
-   ```powershell
-   .\setup-windows.ps1
-   ```
-
-2. **Or use batch file**
-   ```cmd
-   setup-windows.bat
-   ```
-
-3. **Test the deployment**
-   ```powershell
-   .\demo-windows.ps1
-   ```
-
-### Full Stack with Web Interface (PowerShell)
-1. **Run the full-stack setup**
-   ```powershell
-   .\setup-windows-full.ps1
-   ```
-
-2. **Or use batch file**
-   ```cmd
-   setup-windows-full.bat
-   ```
-
-3. **Test the full deployment**
-   ```powershell
-   .\demo-windows-full.ps1
-   ```
-
-### Windows Prerequisites
-- **PowerShell 5.1+** or **PowerShell Core 7+**
-- **Docker Desktop** for Windows
-- **Node.js 18+** (for full-stack deployment)
-- **Git** for cloning the repository
-
-### Windows URLs
+### 3. Access the Services
+- **Web Interface**: http://localhost:3000
 - **Backend API**: http://localhost:8000
-- **Web Interface**: http://localhost:3000 (full-stack only)
 - **API Documentation**: http://localhost:8000/docs
+- **Email Testing**: http://localhost:1080
 - **Health Check**: http://localhost:8000/healthz
 
-### Windows Troubleshooting
-- Ensure Docker Desktop is running
-- Check Windows Defender firewall settings
-- Verify PowerShell execution policy: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-- For full-stack: Ensure Node.js is installed and in PATH
+### 4. Verify Deployment
+```bash
+# Linux/macOS
+curl http://localhost:8000/healthz
+
+# Windows PowerShell
+Invoke-WebRequest http://localhost:8000/healthz
+```
 
 ## 🔧 Configuration
 
-The service is configured via environment variables. See `.env.sample` for all available options:
+The service is configured via environment variables. See `env.example` for all available options:
 
 ### Essential Configuration
-
 ```bash
 # Server
 APP_HOST=0.0.0.0
 APP_PORT=8000
 
 # Security
-RATE_LIMIT_REQUESTS=100
+RATE_LIMIT_REQUESTS=1000
 RATE_LIMIT_WINDOW=3600
 MAX_REQUEST_SIZE=1048576
 
@@ -271,7 +202,7 @@ services:
       - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -335,8 +266,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - **Issues**: Report bugs and request features via GitHub Issues
 - **Documentation**: Check the `/docs` endpoint when running the service
-- **Windows Users**: See `WINDOWS_PRESENTATION_GUIDE.md` for detailed Windows setup instructions
-- **Quick Reference**: See `WINDOWS_README.md` for Windows-specific quick start
+- **Advanced Setup**: See `ADVANCED_SETUP.md` for manual installation and advanced options
 - **Security**: Report security issues privately to security@example.com
 
 ## 🔄 Changelog
@@ -349,6 +279,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Caching and retry logic
 - Rate limiting and CORS support
 - Production-ready configuration
+- Unified Docker Compose setup
 
 ### v1.1.0
 - Initial multi-vendor support
