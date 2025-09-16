@@ -1,5 +1,6 @@
 README.md
 pyproject.toml
+setup.py
 src/soc_agent/__init__.py
 src/soc_agent/analyzer.py
 src/soc_agent/api.py

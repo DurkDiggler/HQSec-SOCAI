@@ -6,8 +6,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/SOCAI.git
-cd SOCAI
+git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
+cd HQSec-SOCAI
 
 # Run the setup script
 ./setup.sh
@@ -24,8 +24,8 @@ uvicorn soc_agent.webapp:app --host 0.0.0.0 --port 8000 --reload
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/SOCAI.git
-cd SOCAI
+git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
+cd HQSec-SOCAI
 
 # Create virtual environment
 python3 -m venv venv
@@ -46,8 +46,8 @@ uvicorn soc_agent.webapp:app --host 0.0.0.0 --port 8000 --reload
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/SOCAI.git
-cd SOCAI
+git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
+cd HQSec-SOCAI
 
 # Create environment file
 cp .env.example .env
