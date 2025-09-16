@@ -27,10 +27,15 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 
 ## 📋 Requirements
 
-- **Docker & Docker Compose** (recommended)
+- **Docker & Docker Compose** (recommended for all platforms)
 - **Python 3.10+** (for manual installation)
 - **Node.js 18+** (for frontend development)
 - **Threat intelligence API keys** (optional but recommended)
+
+### Platform Support
+- **Windows**: Docker Desktop + PowerShell/Command Prompt
+- **Linux**: Docker + Docker Compose + Bash
+- **macOS**: Docker Desktop + Terminal
 
 ## 🚀 Quick Start
 

@@ -24,25 +24,25 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 ## 🪟 Windows Advanced Setup
 
-### PowerShell Scripts
+### PowerShell Scripts (in `advanced/` directory)
 ```powershell
 # Backend only setup
-.\setup-windows.ps1
+.\advanced\setup-windows.ps1
 
 # Full stack setup
-.\setup-windows-full.ps1
+.\advanced\setup-windows-full.ps1
 
 # Test deployment
-.\demo-windows-full.ps1
+.\advanced\demo-windows-full.ps1
 ```
 
-### Batch Files
+### Batch Files (in `advanced/` directory)
 ```cmd
 # Backend only
-setup-windows.bat
+advanced\setup-windows.bat
 
 # Full stack
-setup-windows-full.bat
+advanced\setup-windows-full.bat
 ```
 
 ### Windows Prerequisites
@@ -51,15 +51,24 @@ setup-windows-full.bat
 - **Node.js 18+** (for full-stack)
 - **Git** for cloning
 
+### Windows Commands
+```powershell
+# Test health check
+Invoke-WebRequest http://localhost:8000/healthz
+
+# Send test webhook
+Invoke-RestMethod -Uri "http://localhost:8000/webhook" -Method POST -ContentType "application/json" -Body '{"source":"test","event_type":"auth_failed","severity":5}'
+```
+
 ## 🐧 Linux Advanced Setup
 
-### Bash Scripts
+### Bash Scripts (in `advanced/` directory)
 ```bash
 # Full stack setup
-./setup-full.sh
+./advanced/setup-full.sh
 
 # Test deployment
-./test-full-stack.sh
+./advanced/test-full-stack.sh
 ```
 
 ### Manual Installation
@@ -73,6 +82,15 @@ cp env.example .env
 
 # Run the service
 uvicorn soc_agent.webapp:app --host 0.0.0.0 --port 8000
+```
+
+### Linux Commands
+```bash
+# Test health check
+curl http://localhost:8000/healthz
+
+# Send test webhook
+curl -X POST http://localhost:8000/webhook -H "Content-Type: application/json" -d '{"source":"test","event_type":"auth_failed","severity":5}'
 ```
 
 ## 🍎 macOS Advanced Setup
@@ -89,6 +107,15 @@ cp env.example .env
 
 # Run with Docker
 docker compose up --build
+```
+
+### macOS Commands
+```bash
+# Test health check
+curl http://localhost:8000/healthz
+
+# Send test webhook
+curl -X POST http://localhost:8000/webhook -H "Content-Type: application/json" -d '{"source":"test","event_type":"auth_failed","severity":5}'
 ```
 
 ## 🔧 Environment Configuration
@@ -275,6 +302,8 @@ locust -f tests/load_test.py --host=http://localhost:8000
 ### Common Issues
 
 1. **Port Already in Use**
+
+   **Linux/macOS:**
    ```bash
    # Check what's using the port
    lsof -i :8000
@@ -283,9 +312,18 @@ locust -f tests/load_test.py --host=http://localhost:8000
    kill -9 <PID>
    ```
 
+   **Windows:**
+   ```powershell
+   # Check what's using the port
+   netstat -ano | findstr :8000
+   
+   # Kill the process
+   taskkill /PID <PID> /F
+   ```
+
 2. **Docker Build Fails**
    ```bash
-   # Clean Docker cache
+   # Clean Docker cache (all platforms)
    docker system prune -a
    
    # Rebuild without cache
@@ -308,6 +346,28 @@ locust -f tests/load_test.py --host=http://localhost:8000
    
    # Rebuild frontend
    docker compose build frontend
+   ```
+
+5. **Windows-Specific Issues**
+   ```powershell
+   # PowerShell execution policy
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   
+   # Docker Desktop not running
+   # Start Docker Desktop from Start Menu
+   
+   # Windows Defender blocking
+   # Add Docker Desktop to Windows Defender exclusions
+   ```
+
+6. **Linux-Specific Issues**
+   ```bash
+   # Permission denied
+   sudo chmod +x advanced/setup-full.sh
+   
+   # Docker not in PATH
+   sudo usermod -aG docker $USER
+   # Log out and back in
    ```
 
 ### Debug Mode

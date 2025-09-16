@@ -2,6 +2,13 @@
 
 Get SOC Agent running in 3 simple steps!
 
+## 📋 Prerequisites
+
+- **Docker & Docker Compose** (all platforms)
+- **Git** (all platforms)
+- **Windows**: Docker Desktop for Windows
+- **Linux/macOS**: Docker and Docker Compose installed
+
 ## 🚀 3-Step Setup
 
 ### 1. Clone and Configure
@@ -50,6 +57,8 @@ EMAIL_FROM=soc-agent@yourcompany.com
 ## 📡 Test Your Setup
 
 Send a test webhook:
+
+**Linux/macOS:**
 ```bash
 curl -X POST http://localhost:8000/webhook \
   -H "Content-Type: application/json" \
@@ -62,6 +71,19 @@ curl -X POST http://localhost:8000/webhook \
     "ip": "1.2.3.4",
     "username": "admin"
   }'
+```
+
+**Windows PowerShell:**
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/webhook" -Method POST -ContentType "application/json" -Body '{
+  "source": "test",
+  "event_type": "auth_failed",
+  "severity": 5,
+  "timestamp": "2023-01-01T00:00:00Z",
+  "message": "Test authentication failure",
+  "ip": "1.2.3.4",
+  "username": "admin"
+}'
 ```
 
 ## 🆘 Need Help?
