@@ -37,8 +37,8 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 
 1. **Clone and configure**
    ```bash
-   git clone https://github.com/DurkDiggler/SOCAI.git
-   cd SOCAI
+   git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
+   cd HQSec-SOCAI
    cp .env.sample .env
    # Edit .env with your configuration
    ```

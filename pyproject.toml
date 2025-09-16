@@ -3,7 +3,7 @@ name = "soc-agent"
 version = "1.2.0"
 description = "SOC webhook receiver: enrich IOCs, score threats, and notify via Email/Autotask"
 readme = "README.md"
-authors = [{ name = "BlackOak Security" }]
+authors = [{ name = "DurkDiggler" }]
 requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.112",
