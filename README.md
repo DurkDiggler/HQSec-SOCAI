@@ -33,13 +33,15 @@ A robust FastAPI webhook service that ingests security events, enriches IOCs wit
 - **Threat intelligence API keys** (optional but recommended)
 
 ### Platform Support
-- **Windows**: Docker Desktop + PowerShell/Command Prompt
+- **Windows**: Docker Desktop + PowerShell/Command Prompt OR Native Python/Node.js
 - **Linux**: Docker + Docker Compose + Bash
 - **macOS**: Docker Desktop + Terminal
 
 ## 🚀 Quick Start
 
-### 1. Clone and Configure
+### Option 1: Docker (Recommended - All Platforms)
+
+#### 1. Clone and Configure
 ```bash
 git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
 cd HQSec-SOCAI
@@ -47,19 +49,40 @@ cp env.example .env
 # Edit .env with your configuration
 ```
 
-### 2. Start Everything
+#### 2. Start Everything
 ```bash
 docker compose up --build
 ```
 
-### 3. Access the Services
+#### 3. Access the Services
 - **Web Interface**: http://localhost:3000
 - **Backend API**: http://localhost:8000
 - **API Documentation**: http://localhost:8000/docs
 - **Email Testing**: http://localhost:1080
 - **Health Check**: http://localhost:8000/healthz
 
-### 4. Verify Deployment
+### Option 2: Native Windows (No Docker Required)
+
+#### 1. Clone and Setup
+```powershell
+git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
+cd HQSec-SOCAI
+.\setup-windows-native.ps1
+```
+
+#### 2. Start Everything
+```powershell
+# Double-click this file or run:
+.\start-soc-agent.bat
+```
+
+#### 3. Access the Services
+- **Web Interface**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/healthz
+
+### Verify Deployment
 ```bash
 # Linux/macOS
 curl http://localhost:8000/healthz

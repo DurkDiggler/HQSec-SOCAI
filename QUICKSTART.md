@@ -4,26 +4,55 @@ Get SOC Agent running in 3 simple steps!
 
 ## 📋 Prerequisites
 
+### Option 1: Docker (Recommended - All Platforms)
 - **Docker & Docker Compose** (all platforms)
 - **Git** (all platforms)
 - **Windows**: Docker Desktop for Windows
 - **Linux/macOS**: Docker and Docker Compose installed
 
+### Option 2: Native Installation (Windows Only)
+- **Python 3.10+** (from python.org)
+- **Node.js 18+** (from nodejs.org)
+- **Git** (from git-scm.com)
+- **No Docker required!**
+
 ## 🚀 3-Step Setup
 
-### 1. Clone and Configure
+### Option 1: Docker (All Platforms)
+
+#### 1. Clone and Configure
 ```bash
 git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
 cd HQSec-SOCAI
 cp env.example .env
 ```
 
-### 2. Start Everything
+#### 2. Start Everything
 ```bash
 docker compose up --build
 ```
 
-### 3. Access Your SOC Agent
+#### 3. Access Your SOC Agent
+- **Web Interface**: http://localhost:3000
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/healthz
+
+### Option 2: Native Windows (No Docker)
+
+#### 1. Clone and Setup
+```powershell
+git clone https://github.com/DurkDiggler/HQSec-SOCAI.git
+cd HQSec-SOCAI
+.\setup-windows-native.ps1
+```
+
+#### 2. Start Everything
+```powershell
+# Double-click this file or run:
+.\start-soc-agent.bat
+```
+
+#### 3. Access Your SOC Agent
 - **Web Interface**: http://localhost:3000
 - **API Documentation**: http://localhost:8000/docs
 - **Health Check**: http://localhost:8000/healthz
