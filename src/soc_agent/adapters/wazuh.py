@@ -16,10 +16,17 @@ def normalize_wazuh_event(event: Dict[str, Any]) -> Dict[str, Any]:
     else:
         event_type = "unknown"
 
+    # Safely convert severity to int
+    try:
+        severity = int(rule.get("level", 0))
+        severity = max(0, min(severity, 10))  # Ensure it's between 0-10
+    except (ValueError, TypeError):
+        severity = 0
+
     return {
         "source": "wazuh",
         "event_type": event_type,
-        "severity": min(int(rule.get("level", 0)), 10),
+        "severity": severity,
         "timestamp": event.get("@timestamp"),
         "message": event.get("full_log") or rule.get("description"),
         "ip": data.get("srcip"),

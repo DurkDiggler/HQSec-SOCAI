@@ -41,6 +41,12 @@ async def get_alerts_endpoint(
 ):
     """Get alerts with filtering and pagination."""
     try:
+        # Validate parameters
+        if skip < 0:
+            skip = 0
+        if limit < 1 or limit > 1000:
+            limit = 100
+            
         alerts = get_alerts(
             db=db,
             skip=skip,

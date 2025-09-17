@@ -17,6 +17,17 @@ class EventIn(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$"
     )
     severity: int = Field(default=0, ge=0, le=10, description="Event severity (0-10)")
+
+    @field_validator("severity", mode="before")
+    @classmethod
+    def validate_severity(cls, v):
+        if v is None:
+            return 0
+        try:
+            result = int(v)
+            return max(0, min(result, 10))  # Ensure it's between 0-10
+        except (ValueError, TypeError):
+            return 0
     timestamp: Optional[str] = Field(default=None, description="Event timestamp (ISO format)")
     message: Optional[str] = Field(default=None, max_length=10000, description="Event message")
     ip: Optional[str] = Field(default=None, description="IP address")

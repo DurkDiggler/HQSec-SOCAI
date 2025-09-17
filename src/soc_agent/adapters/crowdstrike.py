@@ -11,10 +11,17 @@ def normalize_crowdstrike_event(event: Dict[str, Any]) -> Dict[str, Any]:
     else:
         event_type = etype_lower or "unknown"
 
+    # Safely convert severity to int
+    try:
+        severity = int(event.get("Severity", 0))
+        severity = max(0, min(severity, 10))  # Ensure it's between 0-10
+    except (ValueError, TypeError):
+        severity = 0
+
     return {
         "source": "crowdstrike",
         "event_type": event_type,
-        "severity": int(event.get("Severity", 0)),
+        "severity": severity,
         "timestamp": event.get("@timestamp"),
         "message": event.get("Name"),
         "ip": event.get("LocalIP"),
