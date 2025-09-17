@@ -188,6 +188,71 @@ const Settings = () => {
     }
   };
 
+  const getEmailStatus = () => {
+    const isEnabled = settings.enable_email;
+    const hasHost = settings.smtp_host && settings.smtp_host.trim() !== '';
+    const hasFrom = settings.email_from && settings.email_from.trim() !== '';
+    const hasTo = settings.email_to && settings.email_to.length > 0;
+    
+    if (!isEnabled) {
+      return (
+        <span className="flex items-center text-gray-600">
+          <XCircle className="h-4 w-4 mr-1" />
+          Disabled
+        </span>
+      );
+    }
+    
+    if (hasHost && hasFrom && hasTo) {
+      return (
+        <span className="flex items-center text-green-600">
+          <CheckCircle className="h-4 w-4 mr-1" />
+          Configured
+        </span>
+      );
+    }
+    
+    return (
+      <span className="flex items-center text-yellow-600">
+        <AlertTriangle className="h-4 w-4 mr-1" />
+        Not Configured
+      </span>
+    );
+  };
+
+  const getIntelStatus = () => {
+    const hasOtx = settings.otx_api_key && settings.otx_api_key.trim() !== '';
+    const hasVt = settings.vt_api_key && settings.vt_api_key.trim() !== '';
+    const hasAbuse = settings.abuseipdb_api_key && settings.abuseipdb_api_key.trim() !== '';
+    
+    const configuredCount = [hasOtx, hasVt, hasAbuse].filter(Boolean).length;
+    
+    if (configuredCount === 0) {
+      return (
+        <span className="flex items-center text-gray-600">
+          <XCircle className="h-4 w-4 mr-1" />
+          None
+        </span>
+      );
+    }
+    
+    if (configuredCount === 3) {
+      return (
+        <span className="flex items-center text-green-600">
+          <CheckCircle className="h-4 w-4 mr-1" />
+          All
+        </span>
+      );
+    }
+    
+    return (
+      <span className="flex items-center text-yellow-600">
+        <AlertTriangle className="h-4 w-4 mr-1" />
+        Partial ({configuredCount}/3)
+      </span>
+    );
+  };
+
   const handleInputChange = (section, field, value) => {
     setSettings(prev => ({
       ...prev,
@@ -581,17 +646,32 @@ const Settings = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Email Service</span>
-                  <span className="flex items-center text-yellow-600">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    Not Configured
-                  </span>
+                  {getEmailStatus()}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Threat Intel</span>
-                  <span className="flex items-center text-yellow-600">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    Partial
-                  </span>
+                  {getIntelStatus()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Configuration Note */}
+          <div className="card">
+            <div className="card-header">
+              <h3 className="text-lg font-semibold text-gray-900">Configuration Note</h3>
+            </div>
+            <div className="card-body">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <Bell className="h-5 w-5 text-blue-400 mr-3 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-800 mb-1">Settings Update Required</h4>
+                    <p className="text-sm text-blue-700">
+                      After updating the .env file, you need to restart the SOC Agent service for changes to take effect. 
+                      The status indicators above will update automatically once the service is restarted.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -606,9 +686,16 @@ const Settings = () => {
               <div className="space-y-2">
                 <button 
                   className="btn btn-outline btn-sm w-full"
-                  onClick={handleTestEmail}
+                  onClick={fetchSettings}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Settings
+                </button>
+                <button 
+                  className="btn btn-outline btn-sm w-full"
+                  onClick={handleTestEmail}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
                   Test Email
                 </button>
                 <button 
