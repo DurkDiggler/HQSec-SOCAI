@@ -13,8 +13,8 @@ RUN apt-get update && apt-get upgrade -y && \
         sqlmap nikto gobuster wpscan \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies for the MCP server
-RUN pip3 install --no-cache-dir flask openai
+    # Install Python dependencies for the MCP server
+    RUN pip3 install --no-cache-dir --break-system-packages flask openai
 
 # Copy the server script and expose the service port
 COPY server.py /opt/server.py
