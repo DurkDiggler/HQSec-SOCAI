@@ -9,6 +9,10 @@ urllib3>=2.0
 # Database
 sqlalchemy>=2.0
 alembic>=1.12
+psycopg2-binary>=2.9.0
+
+# Caching
+redis>=4.5.0
 
 # Security & monitoring
 cryptography>=41.0

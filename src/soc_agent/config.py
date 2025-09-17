@@ -77,6 +77,12 @@ class Settings(BaseSettings):
     postgres_user: Optional[str] = Field(default=None, env="POSTGRES_USER")
     postgres_password: Optional[str] = Field(default=None, env="POSTGRES_PASSWORD")
     postgres_db: Optional[str] = Field(default=None, env="POSTGRES_DB")
+    
+    # Redis
+    redis_host: str = Field(default="redis", env="REDIS_HOST")
+    redis_port: int = Field(default=6379, ge=1, le=65535, env="REDIS_PORT")
+    redis_password: Optional[str] = Field(default=None, env="REDIS_PASSWORD")
+    redis_db: int = Field(default=0, ge=0, le=15, env="REDIS_DB")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

@@ -49,7 +49,7 @@ services:
     ports:
       - "3000:80"
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=http://localhost/api
     depends_on:
       - soc-agent
     restart: unless-stopped
