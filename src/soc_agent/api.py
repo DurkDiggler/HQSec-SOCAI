@@ -21,6 +21,13 @@ from .database import (
     get_top_ips,
     get_top_sources,
     update_alert_status,
+    save_ai_analysis,
+    get_ai_analysis_by_alert_id,
+    save_offensive_test,
+    update_offensive_test_status,
+    get_offensive_tests,
+    save_threat_correlation,
+    get_threat_correlations
 )
 from .ai.threat_analyzer import AIThreatAnalyzer
 from .ai.risk_assessor import AIRiskAssessor
@@ -439,6 +446,16 @@ async def ai_analyze_alert_endpoint(
         if not alert:
             raise HTTPException(status_code=404, detail="Alert not found")
         
+        # Check if AI analysis already exists
+        existing_analysis = get_ai_analysis_by_alert_id(db, alert_id)
+        if existing_analysis:
+            return {
+                "alert_id": alert_id,
+                "ai_analysis": existing_analysis.to_dict(),
+                "timestamp": existing_analysis.updated_at.isoformat(),
+                "cached": True
+            }
+        
         # Convert alert to event data
         event_data = {
             "source": alert.source,
@@ -452,13 +469,26 @@ async def ai_analyze_alert_endpoint(
         }
         
         # Perform AI analysis
+        import time
+        start_time = time.time()
         ai_analyzer = AIThreatAnalyzer()
         ai_analysis = await ai_analyzer.analyze_threat(event_data)
+        processing_time = time.time() - start_time
+        
+        # Save AI analysis to database
+        saved_analysis = save_ai_analysis(
+            db=db,
+            alert_id=alert_id,
+            ai_analysis=ai_analysis,
+            model_used=SETTINGS.openai_model,
+            processing_time=processing_time
+        )
         
         return {
             "alert_id": alert_id,
-            "ai_analysis": ai_analysis,
-            "timestamp": datetime.utcnow().isoformat()
+            "ai_analysis": saved_analysis.to_dict(),
+            "timestamp": datetime.utcnow().isoformat(),
+            "cached": False
         }
         
     except Exception as e:
@@ -531,14 +561,43 @@ async def ai_correlate_threats_endpoint(
 @api_router.post("/mcp/scan", response_model=Dict[str, Any])
 async def mcp_scan_endpoint(
     target: str = Query(..., description="Target to scan"),
-    scan_type: str = Query("basic", description="Type of scan to perform")
+    scan_type: str = Query("basic", description="Type of scan to perform"),
+    authorized_by: str = Query(None, description="User who authorized the scan"),
+    authorization_reason: str = Query(None, description="Reason for authorization"),
+    test_scope: str = Query(None, description="Scope of the test"),
+    db: Session = Depends(get_db)
 ):
     """Perform scan using MCP servers."""
     try:
+        # Save offensive test record
+        test_record = save_offensive_test(
+            db=db,
+            target=target,
+            test_type=f"scan_{scan_type}",
+            test_parameters={"scan_type": scan_type},
+            authorized_by=authorized_by,
+            authorization_reason=authorization_reason,
+            test_scope=test_scope
+        )
+        
+        # Update status to running
+        update_offensive_test_status(db, test_record.id, "running", progress=10)
+        
         async with MCPServerRegistry() as mcp_registry:
             result = await mcp_registry.scan_target(target, scan_type)
             
+            # Update test with results
+            update_offensive_test_status(
+                db=db,
+                test_id=test_record.id,
+                status="completed",
+                progress=100,
+                results=result,
+                mcp_server_used="kali_mcp"
+            )
+            
             return {
+                "test_id": test_record.id,
                 "scan_result": result,
                 "target": target,
                 "scan_type": scan_type,
@@ -547,6 +606,9 @@ async def mcp_scan_endpoint(
             
     except Exception as e:
         logger.error(f"MCP scan failed: {e}")
+        # Update test status to failed
+        if 'test_record' in locals():
+            update_offensive_test_status(db, test_record.id, "failed")
         raise HTTPException(status_code=500, detail=f"Scan failed: {e}")
 
 
@@ -630,3 +692,102 @@ async def mcp_capabilities_endpoint():
     except Exception as e:
         logger.error(f"MCP capabilities check failed: {e}")
         raise HTTPException(status_code=500, detail=f"Capabilities check failed: {e}")
+
+
+# Additional Data Retrieval Endpoints
+@api_router.get("/ai/analyses", response_model=Dict[str, Any])
+async def get_ai_analyses_endpoint(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    risk_level: Optional[str] = Query(None),
+    min_confidence: Optional[float] = Query(None, ge=0.0, le=100.0),
+    db: Session = Depends(get_db)
+):
+    """Get AI analyses with filtering."""
+    try:
+        from .database import get_ai_analyses
+        
+        analyses = get_ai_analyses(
+            db=db,
+            skip=skip,
+            limit=limit,
+            risk_level=risk_level,
+            min_confidence=min_confidence
+        )
+        
+        return {
+            "analyses": [analysis.to_dict() for analysis in analyses],
+            "total": len(analyses),
+            "skip": skip,
+            "limit": limit
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get AI analyses: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get AI analyses: {e}")
+
+
+@api_router.get("/mcp/tests", response_model=Dict[str, Any])
+async def get_offensive_tests_endpoint(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    status: Optional[str] = Query(None),
+    test_type: Optional[str] = Query(None),
+    target: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Get offensive tests with filtering."""
+    try:
+        tests = get_offensive_tests(
+            db=db,
+            skip=skip,
+            limit=limit,
+            status=status,
+            test_type=test_type,
+            target=target
+        )
+        
+        return {
+            "tests": [test.to_dict() for test in tests],
+            "total": len(tests),
+            "skip": skip,
+            "limit": limit
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get offensive tests: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get offensive tests: {e}")
+
+
+@api_router.get("/ai/correlations", response_model=Dict[str, Any])
+async def get_threat_correlations_endpoint(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    status: Optional[str] = Query(None),
+    correlation_type: Optional[str] = Query(None),
+    risk_level: Optional[str] = Query(None),
+    min_confidence: Optional[float] = Query(None, ge=0.0, le=100.0),
+    db: Session = Depends(get_db)
+):
+    """Get threat correlations with filtering."""
+    try:
+        correlations = get_threat_correlations(
+            db=db,
+            skip=skip,
+            limit=limit,
+            status=status,
+            correlation_type=correlation_type,
+            risk_level=risk_level,
+            min_confidence=min_confidence
+        )
+        
+        return {
+            "correlations": [correlation.to_dict() for correlation in correlations],
+            "total": len(correlations),
+            "skip": skip,
+            "limit": limit
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get threat correlations: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get threat correlations: {e}")

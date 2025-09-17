@@ -18,6 +18,7 @@ from sqlalchemy import (
     create_engine,
     desc,
     func,
+    ForeignKey,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -115,6 +116,178 @@ class AlertStats(Base):
     false_positives = Column(Integer, default=0)
     emails_sent = Column(Integer, default=0)
     tickets_created = Column(Integer, default=0)
+
+
+class AIAnalysis(Base):
+    """AI analysis results for alerts."""
+    
+    __tablename__ = "ai_analyses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    alert_id = Column(Integer, ForeignKey("alerts.id"), nullable=False, index=True)
+    
+    # AI Analysis Results
+    threat_classification = Column(String(100), nullable=True)
+    risk_level = Column(String(20), nullable=True, index=True)  # LOW, MEDIUM, HIGH, CRITICAL
+    confidence_score = Column(Float, default=0.0, index=True)
+    
+    # AI Insights
+    ai_insights = Column(JSON, default=dict)
+    recommendations = Column(JSON, default=list)
+    attack_vectors = Column(JSON, default=list)
+    iocs = Column(JSON, default=dict)
+    mitigation_strategies = Column(JSON, default=list)
+    pattern_analysis = Column(JSON, default=dict)
+    
+    # Metadata
+    model_used = Column(String(50), nullable=True)
+    processing_time = Column(Float, nullable=True)  # seconds
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert AI analysis to dictionary."""
+        return {
+            "id": self.id,
+            "alert_id": self.alert_id,
+            "threat_classification": self.threat_classification,
+            "risk_level": self.risk_level,
+            "confidence_score": self.confidence_score,
+            "ai_insights": self.ai_insights,
+            "recommendations": self.recommendations,
+            "attack_vectors": self.attack_vectors,
+            "iocs": self.iocs,
+            "mitigation_strategies": self.mitigation_strategies,
+            "pattern_analysis": self.pattern_analysis,
+            "model_used": self.model_used,
+            "processing_time": self.processing_time,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class OffensiveTest(Base):
+    """Offensive security test results."""
+    
+    __tablename__ = "offensive_tests"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Test Details
+    target = Column(String(255), nullable=False, index=True)
+    test_type = Column(String(100), nullable=False, index=True)  # port_scan, vuln_scan, web_scan, etc.
+    test_name = Column(String(255), nullable=True)
+    
+    # Test Status
+    status = Column(String(50), default="pending", index=True)  # pending, running, completed, failed, cancelled
+    progress = Column(Integer, default=0)  # 0-100
+    
+    # Test Results
+    results = Column(JSON, default=dict)
+    findings = Column(JSON, default=list)
+    vulnerabilities = Column(JSON, default=list)
+    recommendations = Column(JSON, default=list)
+    
+    # Test Configuration
+    test_parameters = Column(JSON, default=dict)
+    mcp_server_used = Column(String(100), nullable=True)
+    
+    # Authorization & Security
+    authorized_by = Column(String(255), nullable=True)
+    authorization_reason = Column(Text, nullable=True)
+    test_scope = Column(Text, nullable=True)
+    
+    # Timing
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    duration = Column(Float, nullable=True)  # seconds
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert offensive test to dictionary."""
+        return {
+            "id": self.id,
+            "target": self.target,
+            "test_type": self.test_type,
+            "test_name": self.test_name,
+            "status": self.status,
+            "progress": self.progress,
+            "results": self.results,
+            "findings": self.findings,
+            "vulnerabilities": self.vulnerabilities,
+            "recommendations": self.recommendations,
+            "test_parameters": self.test_parameters,
+            "mcp_server_used": self.mcp_server_used,
+            "authorized_by": self.authorized_by,
+            "authorization_reason": self.authorization_reason,
+            "test_scope": self.test_scope,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "duration": self.duration,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class ThreatCorrelation(Base):
+    """Threat correlation analysis results."""
+    
+    __tablename__ = "threat_correlations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Correlation Details
+    correlation_id = Column(String(100), nullable=False, unique=True, index=True)
+    correlation_name = Column(String(255), nullable=False)
+    correlation_type = Column(String(50), nullable=False, index=True)  # campaign, pattern, ioc_match
+    
+    # Related Alerts
+    alert_ids = Column(JSON, default=list)  # List of related alert IDs
+    
+    # Correlation Analysis
+    confidence_score = Column(Float, default=0.0, index=True)
+    risk_level = Column(String(20), nullable=True, index=True)  # LOW, MEDIUM, HIGH, CRITICAL
+    threat_actors = Column(JSON, default=list)
+    attack_techniques = Column(JSON, default=list)
+    ioc_matches = Column(JSON, default=dict)
+    
+    # Timeline
+    first_seen = Column(DateTime, nullable=True, index=True)
+    last_seen = Column(DateTime, nullable=True, index=True)
+    duration_hours = Column(Float, nullable=True)
+    
+    # Status
+    status = Column(String(50), default="active", index=True)  # active, monitoring, resolved, false_positive
+    resolution_notes = Column(Text, nullable=True)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert threat correlation to dictionary."""
+        return {
+            "id": self.id,
+            "correlation_id": self.correlation_id,
+            "correlation_name": self.correlation_name,
+            "correlation_type": self.correlation_type,
+            "alert_ids": self.alert_ids,
+            "confidence_score": self.confidence_score,
+            "risk_level": self.risk_level,
+            "threat_actors": self.threat_actors,
+            "attack_techniques": self.attack_techniques,
+            "ioc_matches": self.ioc_matches,
+            "first_seen": self.first_seen.isoformat() if self.first_seen else None,
+            "last_seen": self.last_seen.isoformat() if self.last_seen else None,
+            "duration_hours": self.duration_hours,
+            "status": self.status,
+            "resolution_notes": self.resolution_notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 # Database setup
@@ -393,3 +566,256 @@ def get_top_ips(db: Session, limit: int = 10) -> List[Dict[str, Any]]:
     ).limit(limit).all()
     
     return [{"ip": row.ip, "count": row.count} for row in result]
+
+
+# AI Analysis Functions
+def save_ai_analysis(
+    db: Session,
+    alert_id: int,
+    ai_analysis: Dict[str, Any],
+    model_used: str = None,
+    processing_time: float = None
+) -> AIAnalysis:
+    """Save AI analysis results to database."""
+    
+    analysis = AIAnalysis(
+        alert_id=alert_id,
+        threat_classification=ai_analysis.get("threat_classification"),
+        risk_level=ai_analysis.get("risk_level"),
+        confidence_score=ai_analysis.get("confidence_score", 0.0),
+        ai_insights=ai_analysis.get("ai_insights", {}),
+        recommendations=ai_analysis.get("recommendations", []),
+        attack_vectors=ai_analysis.get("attack_vectors", []),
+        iocs=ai_analysis.get("iocs", {}),
+        mitigation_strategies=ai_analysis.get("mitigation_strategies", []),
+        pattern_analysis=ai_analysis.get("pattern_analysis", {}),
+        model_used=model_used,
+        processing_time=processing_time
+    )
+    
+    db.add(analysis)
+    db.commit()
+    db.refresh(analysis)
+    
+    return analysis
+
+
+def get_ai_analysis_by_alert_id(db: Session, alert_id: int) -> Optional[AIAnalysis]:
+    """Get AI analysis by alert ID."""
+    return db.query(AIAnalysis).filter(AIAnalysis.alert_id == alert_id).first()
+
+
+def get_ai_analyses(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    risk_level: Optional[str] = None,
+    min_confidence: Optional[float] = None
+) -> List[AIAnalysis]:
+    """Get AI analyses with filtering."""
+    
+    query = db.query(AIAnalysis)
+    
+    if risk_level:
+        query = query.filter(AIAnalysis.risk_level == risk_level)
+    if min_confidence is not None:
+        query = query.filter(AIAnalysis.confidence_score >= min_confidence)
+    
+    return query.order_by(desc(AIAnalysis.created_at)).offset(skip).limit(limit).all()
+
+
+# Offensive Test Functions
+def save_offensive_test(
+    db: Session,
+    target: str,
+    test_type: str,
+    test_parameters: Dict[str, Any] = None,
+    authorized_by: str = None,
+    authorization_reason: str = None,
+    test_scope: str = None
+) -> OffensiveTest:
+    """Save offensive test to database."""
+    
+    test = OffensiveTest(
+        target=target,
+        test_type=test_type,
+        test_parameters=test_parameters or {},
+        authorized_by=authorized_by,
+        authorization_reason=authorization_reason,
+        test_scope=test_scope,
+        status="pending"
+    )
+    
+    db.add(test)
+    db.commit()
+    db.refresh(test)
+    
+    return test
+
+
+def update_offensive_test_status(
+    db: Session,
+    test_id: int,
+    status: str,
+    progress: int = None,
+    results: Dict[str, Any] = None,
+    findings: List[Dict[str, Any]] = None,
+    vulnerabilities: List[Dict[str, Any]] = None,
+    recommendations: List[str] = None,
+    mcp_server_used: str = None
+) -> Optional[OffensiveTest]:
+    """Update offensive test status and results."""
+    
+    test = db.query(OffensiveTest).filter(OffensiveTest.id == test_id).first()
+    if not test:
+        return None
+    
+    test.status = status
+    if progress is not None:
+        test.progress = progress
+    if results is not None:
+        test.results = results
+    if findings is not None:
+        test.findings = findings
+    if vulnerabilities is not None:
+        test.vulnerabilities = vulnerabilities
+    if recommendations is not None:
+        test.recommendations = recommendations
+    if mcp_server_used is not None:
+        test.mcp_server_used = mcp_server_used
+    
+    # Update timing
+    if status == "running" and not test.started_at:
+        test.started_at = datetime.utcnow()
+    elif status in ["completed", "failed", "cancelled"] and not test.completed_at:
+        test.completed_at = datetime.utcnow()
+        if test.started_at:
+            test.duration = (test.completed_at - test.started_at).total_seconds()
+    
+    test.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(test)
+    
+    return test
+
+
+def get_offensive_tests(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    status: Optional[str] = None,
+    test_type: Optional[str] = None,
+    target: Optional[str] = None
+) -> List[OffensiveTest]:
+    """Get offensive tests with filtering."""
+    
+    query = db.query(OffensiveTest)
+    
+    if status:
+        query = query.filter(OffensiveTest.status == status)
+    if test_type:
+        query = query.filter(OffensiveTest.test_type == test_type)
+    if target:
+        query = query.filter(OffensiveTest.target.ilike(f"%{target}%"))
+    
+    return query.order_by(desc(OffensiveTest.created_at)).offset(skip).limit(limit).all()
+
+
+def get_offensive_test_by_id(db: Session, test_id: int) -> Optional[OffensiveTest]:
+    """Get offensive test by ID."""
+    return db.query(OffensiveTest).filter(OffensiveTest.id == test_id).first()
+
+
+# Threat Correlation Functions
+def save_threat_correlation(
+    db: Session,
+    correlation_id: str,
+    correlation_name: str,
+    correlation_type: str,
+    alert_ids: List[int],
+    confidence_score: float = 0.0,
+    risk_level: str = None,
+    threat_actors: List[str] = None,
+    attack_techniques: List[str] = None,
+    ioc_matches: Dict[str, Any] = None,
+    first_seen: datetime = None,
+    last_seen: datetime = None
+) -> ThreatCorrelation:
+    """Save threat correlation to database."""
+    
+    correlation = ThreatCorrelation(
+        correlation_id=correlation_id,
+        correlation_name=correlation_name,
+        correlation_type=correlation_type,
+        alert_ids=alert_ids,
+        confidence_score=confidence_score,
+        risk_level=risk_level,
+        threat_actors=threat_actors or [],
+        attack_techniques=attack_techniques or [],
+        ioc_matches=ioc_matches or {},
+        first_seen=first_seen,
+        last_seen=last_seen
+    )
+    
+    # Calculate duration if both timestamps are provided
+    if first_seen and last_seen:
+        correlation.duration_hours = (last_seen - first_seen).total_seconds() / 3600
+    
+    db.add(correlation)
+    db.commit()
+    db.refresh(correlation)
+    
+    return correlation
+
+
+def get_threat_correlations(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    status: Optional[str] = None,
+    correlation_type: Optional[str] = None,
+    risk_level: Optional[str] = None,
+    min_confidence: Optional[float] = None
+) -> List[ThreatCorrelation]:
+    """Get threat correlations with filtering."""
+    
+    query = db.query(ThreatCorrelation)
+    
+    if status:
+        query = query.filter(ThreatCorrelation.status == status)
+    if correlation_type:
+        query = query.filter(ThreatCorrelation.correlation_type == correlation_type)
+    if risk_level:
+        query = query.filter(ThreatCorrelation.risk_level == risk_level)
+    if min_confidence is not None:
+        query = query.filter(ThreatCorrelation.confidence_score >= min_confidence)
+    
+    return query.order_by(desc(ThreatCorrelation.created_at)).offset(skip).limit(limit).all()
+
+
+def get_threat_correlation_by_id(db: Session, correlation_id: str) -> Optional[ThreatCorrelation]:
+    """Get threat correlation by correlation ID."""
+    return db.query(ThreatCorrelation).filter(ThreatCorrelation.correlation_id == correlation_id).first()
+
+
+def update_threat_correlation_status(
+    db: Session,
+    correlation_id: str,
+    status: str,
+    resolution_notes: str = None
+) -> Optional[ThreatCorrelation]:
+    """Update threat correlation status."""
+    
+    correlation = db.query(ThreatCorrelation).filter(ThreatCorrelation.correlation_id == correlation_id).first()
+    if not correlation:
+        return None
+    
+    correlation.status = status
+    if resolution_notes is not None:
+        correlation.resolution_notes = resolution_notes
+    correlation.updated_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(correlation)
+    
+    return correlation
