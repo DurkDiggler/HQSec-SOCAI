@@ -19,13 +19,21 @@ class LLMClient:
     """Client for interacting with Large Language Models."""
     
     def __init__(self):
-        self.client = AsyncOpenAI(api_key=SETTINGS.openai_api_key)
+        if not SETTINGS.openai_api_key:
+            self.client = None
+            logger.warning("OpenAI API key not provided. AI functionality will be disabled.")
+        else:
+            self.client = AsyncOpenAI(api_key=SETTINGS.openai_api_key)
         self.model = getattr(SETTINGS, 'openai_model', 'gpt-4')
         self.max_tokens = getattr(SETTINGS, 'openai_max_tokens', 2000)
         self.temperature = getattr(SETTINGS, 'openai_temperature', 0.1)
     
     async def analyze_threat(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze threat using AI."""
+        if not self.client:
+            logger.warning("OpenAI client not available. Using fallback analysis.")
+            return self._get_fallback_analysis(event_data)
+            
         try:
             prompt = self._build_threat_analysis_prompt(event_data)
             response = await self.client.chat.completions.create(
@@ -50,6 +58,10 @@ class LLMClient:
     
     async def generate_test_scenario(self, target_info: Dict[str, Any]) -> Dict[str, Any]:
         """Generate penetration testing scenario using AI."""
+        if not self.client:
+            logger.warning("OpenAI client not available. Using fallback test scenario.")
+            return self._get_fallback_test_scenario(target_info)
+            
         try:
             prompt = self._build_test_scenario_prompt(target_info)
             response = await self.client.chat.completions.create(
@@ -74,6 +86,10 @@ class LLMClient:
     
     async def assess_risk(self, threat_data: Dict[str, Any]) -> Dict[str, Any]:
         """Assess risk using AI."""
+        if not self.client:
+            logger.warning("OpenAI client not available. Using fallback risk assessment.")
+            return self._get_fallback_risk_assessment(threat_data)
+            
         try:
             prompt = self._build_risk_assessment_prompt(threat_data)
             response = await self.client.chat.completions.create(
