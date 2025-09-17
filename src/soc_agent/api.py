@@ -22,6 +22,9 @@ from .database import (
     get_top_sources,
     update_alert_status,
 )
+from .ai.threat_analyzer import AIThreatAnalyzer
+from .ai.risk_assessor import AIRiskAssessor
+from .mcp.server_registry import MCPServerRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -422,3 +425,208 @@ async def test_database_endpoint(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error testing database: {e}")
         raise HTTPException(status_code=500, detail=f"Database test failed: {e}")
+
+
+# AI Analysis Endpoints
+@api_router.post("/ai/analyze/{alert_id}", response_model=Dict[str, Any])
+async def ai_analyze_alert_endpoint(
+    alert_id: int,
+    db: Session = Depends(get_db)
+):
+    """Perform AI analysis on a specific alert."""
+    try:
+        alert = get_alert_by_id(db, alert_id)
+        if not alert:
+            raise HTTPException(status_code=404, detail="Alert not found")
+        
+        # Convert alert to event data
+        event_data = {
+            "source": alert.source,
+            "event_type": alert.event_type,
+            "severity": alert.severity,
+            "timestamp": alert.timestamp.isoformat() if alert.timestamp else None,
+            "message": alert.message,
+            "ip": alert.ip,
+            "username": alert.username,
+            "raw": alert.raw_data
+        }
+        
+        # Perform AI analysis
+        ai_analyzer = AIThreatAnalyzer()
+        ai_analysis = await ai_analyzer.analyze_threat(event_data)
+        
+        return {
+            "alert_id": alert_id,
+            "ai_analysis": ai_analysis,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"AI analysis failed for alert {alert_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {e}")
+
+
+@api_router.post("/ai/risk-assessment", response_model=Dict[str, Any])
+async def ai_risk_assessment_endpoint(
+    threat_data: Dict[str, Any]
+):
+    """Perform AI risk assessment."""
+    try:
+        risk_assessor = AIRiskAssessor()
+        risk_assessment = await risk_assessor.assess_risk(threat_data)
+        
+        return {
+            "risk_assessment": risk_assessment,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"AI risk assessment failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Risk assessment failed: {e}")
+
+
+@api_router.post("/ai/correlate-threats", response_model=Dict[str, Any])
+async def ai_correlate_threats_endpoint(
+    event_ids: List[int],
+    db: Session = Depends(get_db)
+):
+    """Correlate multiple threats using AI."""
+    try:
+        # Get alerts
+        events = []
+        for event_id in event_ids:
+            alert = get_alert_by_id(db, event_id)
+            if alert:
+                event_data = {
+                    "source": alert.source,
+                    "event_type": alert.event_type,
+                    "severity": alert.severity,
+                    "timestamp": alert.timestamp.isoformat() if alert.timestamp else None,
+                    "message": alert.message,
+                    "ip": alert.ip,
+                    "username": alert.username,
+                    "raw": alert.raw_data
+                }
+                events.append(event_data)
+        
+        if not events:
+            raise HTTPException(status_code=404, detail="No valid alerts found")
+        
+        # Perform correlation analysis
+        ai_analyzer = AIThreatAnalyzer()
+        correlation_analysis = await ai_analyzer.correlate_threats(events)
+        
+        return {
+            "correlation_analysis": correlation_analysis,
+            "event_count": len(events),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"AI threat correlation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Threat correlation failed: {e}")
+
+
+# MCP Server Endpoints
+@api_router.post("/mcp/scan", response_model=Dict[str, Any])
+async def mcp_scan_endpoint(
+    target: str = Query(..., description="Target to scan"),
+    scan_type: str = Query("basic", description="Type of scan to perform")
+):
+    """Perform scan using MCP servers."""
+    try:
+        async with MCPServerRegistry() as mcp_registry:
+            result = await mcp_registry.scan_target(target, scan_type)
+            
+            return {
+                "scan_result": result,
+                "target": target,
+                "scan_type": scan_type,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+    except Exception as e:
+        logger.error(f"MCP scan failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Scan failed: {e}")
+
+
+@api_router.post("/mcp/test-exploit", response_model=Dict[str, Any])
+async def mcp_test_exploit_endpoint(
+    target: str = Query(..., description="Target to test"),
+    vulnerability: str = Query(..., description="Vulnerability to test"),
+    exploit_type: str = Query("basic", description="Type of exploit test")
+):
+    """Test exploit using MCP servers."""
+    try:
+        async with MCPServerRegistry() as mcp_registry:
+            result = await mcp_registry.test_exploit(target, vulnerability, exploit_type)
+            
+            return {
+                "exploit_test_result": result,
+                "target": target,
+                "vulnerability": vulnerability,
+                "exploit_type": exploit_type,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+    except Exception as e:
+        logger.error(f"MCP exploit test failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Exploit test failed: {e}")
+
+
+@api_router.post("/mcp/offensive-test", response_model=Dict[str, Any])
+async def mcp_offensive_test_endpoint(
+    target: str = Query(..., description="Target for offensive testing"),
+    test_scenarios: List[Dict[str, Any]] = Query(..., description="Test scenarios to run")
+):
+    """Run offensive test suite using MCP servers."""
+    try:
+        if not SETTINGS.enable_offensive_testing:
+            raise HTTPException(status_code=403, detail="Offensive testing is disabled")
+        
+        async with MCPServerRegistry() as mcp_registry:
+            result = await mcp_registry.run_offensive_test_suite(target, test_scenarios)
+            
+            return {
+                "offensive_test_result": result,
+                "target": target,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+    except Exception as e:
+        logger.error(f"MCP offensive test failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Offensive test failed: {e}")
+
+
+@api_router.get("/mcp/status", response_model=Dict[str, Any])
+async def mcp_status_endpoint():
+    """Get status of all MCP servers."""
+    try:
+        async with MCPServerRegistry() as mcp_registry:
+            status = await mcp_registry.get_server_status()
+            
+            return {
+                "mcp_servers": status,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+    except Exception as e:
+        logger.error(f"MCP status check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Status check failed: {e}")
+
+
+@api_router.get("/mcp/capabilities", response_model=Dict[str, Any])
+async def mcp_capabilities_endpoint():
+    """Get capabilities of all MCP servers."""
+    try:
+        mcp_registry = MCPServerRegistry()
+        capabilities = mcp_registry.get_server_capabilities()
+        
+        return {
+            "capabilities": capabilities,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"MCP capabilities check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Capabilities check failed: {e}")

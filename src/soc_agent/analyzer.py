@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from .config import SETTINGS
 from .intel import intel_client
+from .ai.threat_analyzer import AIThreatAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -145,3 +146,50 @@ def enrich_and_score(event: Dict[str, Any]) -> Dict[str, Any]:
         "category": category,
         "recommended_action": action,
     }
+
+
+async def enrich_and_score_with_ai(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Enhanced analysis with AI integration."""
+    # Get traditional analysis
+    traditional_analysis = enrich_and_score(event)
+    
+    # Add AI analysis if enabled
+    if SETTINGS.enable_ai_analysis:
+        try:
+            ai_analyzer = AIThreatAnalyzer()
+            ai_analysis = await ai_analyzer.analyze_threat(event)
+            
+            # Combine traditional and AI analysis
+            combined_analysis = traditional_analysis.copy()
+            combined_analysis["ai_analysis"] = ai_analysis
+            
+            # Adjust final score based on AI confidence
+            ai_confidence = ai_analysis.get("confidence_score", 50)
+            traditional_score = traditional_analysis["scores"]["final"]
+            
+            # Weight AI analysis more heavily if confidence is high
+            if ai_confidence >= 80:
+                final_score = int(0.7 * ai_confidence + 0.3 * traditional_score)
+            elif ai_confidence >= 60:
+                final_score = int(0.5 * ai_confidence + 0.5 * traditional_score)
+            else:
+                final_score = int(0.3 * ai_confidence + 0.7 * traditional_score)
+            
+            combined_analysis["scores"]["final"] = min(100, final_score)
+            combined_analysis["scores"]["ai_confidence"] = ai_confidence
+            
+            # Update category and action based on AI analysis
+            if ai_analysis.get("risk_level") == "CRITICAL":
+                combined_analysis["category"] = "CRITICAL"
+                combined_analysis["recommended_action"] = "ticket"
+            elif ai_analysis.get("risk_level") == "HIGH":
+                combined_analysis["category"] = "HIGH"
+                combined_analysis["recommended_action"] = "ticket"
+            
+            return combined_analysis
+            
+        except Exception as e:
+            logger.error(f"AI analysis failed, falling back to traditional: {e}")
+            return traditional_analysis
+    
+    return traditional_analysis

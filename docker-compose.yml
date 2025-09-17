@@ -20,6 +20,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - kali-mcp
 
   # PostgreSQL Database
   postgres:
@@ -89,6 +90,21 @@ services:
       - "1080:1080"   # UI
       - "1025:1025"   # SMTP
     restart: unless-stopped
+
+  # Kali MCP Server
+  kali-mcp:
+    build:
+      context: ./kali-mcp-server
+      dockerfile: Dockerfile
+    image: kali-mcp-server:latest
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    privileged: true  # Required for some security tools
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY=${DISPLAY}
 
 volumes:
   postgres_data:

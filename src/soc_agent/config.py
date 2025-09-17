@@ -83,6 +83,19 @@ class Settings(BaseSettings):
     redis_port: int = Field(default=6379, ge=1, le=65535, env="REDIS_PORT")
     redis_password: Optional[str] = Field(default=None, env="REDIS_PASSWORD")
     redis_db: int = Field(default=0, ge=0, le=15, env="REDIS_DB")
+    
+    # AI Integration
+    openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
+    openai_model: str = Field(default="gpt-4", env="OPENAI_MODEL")
+    openai_max_tokens: int = Field(default=2000, ge=100, le=4000, env="OPENAI_MAX_TOKENS")
+    openai_temperature: float = Field(default=0.1, ge=0.0, le=2.0, env="OPENAI_TEMPERATURE")
+    enable_ai_analysis: bool = Field(default=True, env="ENABLE_AI_ANALYSIS")
+    
+    # MCP Servers
+    kali_mcp_url: str = Field(default="http://localhost:5000", env="KALI_MCP_URL")
+    vuln_scanner_url: str = Field(default="http://localhost:5001", env="VULN_SCANNER_URL")
+    mcp_timeout: int = Field(default=30, ge=5, le=300, env="MCP_TIMEOUT")
+    enable_offensive_testing: bool = Field(default=True, env="ENABLE_OFFENSIVE_TESTING")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

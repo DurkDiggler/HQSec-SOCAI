@@ -7,7 +7,8 @@ import {
   Menu, 
   X,
   Shield,
-  Activity
+  Activity,
+  Brain
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -16,6 +17,7 @@ const Layout = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
+    { name: 'AI Analysis', href: '/ai', icon: Brain },
     { name: 'Alerts', href: '/alerts', icon: AlertTriangle },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];

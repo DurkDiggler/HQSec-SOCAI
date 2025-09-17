@@ -13,10 +13,14 @@ import {
   Calendar,
   MessageSquare,
   Shield,
-  Activity
+  Activity,
+  Brain,
+  Terminal
 } from 'lucide-react';
 import { alertsAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import AIInsights from '../components/AIInsights';
+import MCPTools from '../components/MCPTools';
 import toast from 'react-hot-toast';
 
 const AlertDetail = () => {
@@ -439,6 +443,20 @@ const AlertDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* AI Analysis Section */}
+        <div className="lg:col-span-2">
+          <AIInsights alertId={parseInt(id)} />
+        </div>
+      </div>
+
+      {/* MCP Tools Section */}
+      <div className="mt-8">
+        <div className="flex items-center mb-4">
+          <Terminal className="h-5 w-5 text-blue-600 mr-2" />
+          <h2 className="text-xl font-semibold text-gray-900">Security Testing Tools</h2>
+        </div>
+        <MCPTools target={alert?.ip || 'localhost'} />
       </div>
     </div>
   );

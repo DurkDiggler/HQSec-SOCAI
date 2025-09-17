@@ -135,4 +135,64 @@ export const settingsAPI = {
   },
 };
 
+// AI Analysis API
+export const aiAPI = {
+  // Analyze alert with AI
+  analyzeAlert: async (alertId) => {
+    const response = await api.post(`/ai/analyze/${alertId}`);
+    return response.data;
+  },
+
+  // Perform risk assessment
+  assessRisk: async (threatData) => {
+    const response = await api.post('/ai/risk-assessment', threatData);
+    return response.data;
+  },
+
+  // Correlate multiple threats
+  correlateThreats: async (eventIds) => {
+    const response = await api.post('/ai/correlate-threats', eventIds);
+    return response.data;
+  },
+};
+
+// MCP Server API
+export const mcpAPI = {
+  // Perform scan
+  scanTarget: async (target, scanType = 'basic') => {
+    const response = await api.post('/mcp/scan', null, {
+      params: { target, scan_type: scanType }
+    });
+    return response.data;
+  },
+
+  // Test exploit
+  testExploit: async (target, vulnerability, exploitType = 'basic') => {
+    const response = await api.post('/mcp/test-exploit', null, {
+      params: { target, vulnerability, exploit_type: exploitType }
+    });
+    return response.data;
+  },
+
+  // Run offensive test suite
+  runOffensiveTest: async (target, testScenarios) => {
+    const response = await api.post('/mcp/offensive-test', null, {
+      params: { target, test_scenarios: testScenarios }
+    });
+    return response.data;
+  },
+
+  // Get MCP server status
+  getStatus: async () => {
+    const response = await api.get('/mcp/status');
+    return response.data;
+  },
+
+  // Get MCP capabilities
+  getCapabilities: async () => {
+    const response = await api.get('/mcp/capabilities');
+    return response.data;
+  },
+};
+
 export default api;
