@@ -31,18 +31,26 @@ Traditional setups fail because they require:
 
 ## 🚀 **Option 2: Native Enterprise (No Docker)**
 
-### **Prerequisites: TWO THINGS ONLY**
+### **Windows Prerequisites: TWO THINGS ONLY**
 - **Python 3.10+** (download once, works forever)
 - **Node.js 18+** (download once, works forever)
 
-### **Installation: 2 Steps**
+### **Windows Installation: 2 Steps**
 1. **Download Python & Node.js** from official websites
 2. **Double-click** `setup-windows-native.ps1`
+
+### **Linux Prerequisites: TWO THINGS ONLY**
+- **Python 3.10+** (install via package manager)
+- **Node.js 18+** (install via package manager)
+
+### **Linux Installation: 2 Steps**
+1. **Install Python & Node.js** using your package manager
+2. **Run:** `./setup-linux-native.sh`
 
 ### **That's It!**
 - ✅ **Minimal dependencies** (just 2 programs)
 - ✅ **Automatic configuration** handled by script
-- ✅ **One-click startup** with batch files
+- ✅ **One-click startup** with startup scripts
 - ✅ **No Docker overhead**
 
 ## 🎯 **Enterprise Features**
@@ -68,6 +76,8 @@ Traditional setups fail because they require:
 ## 📋 **Stakeholder Instructions**
 
 ### **For Docker Users (Recommended)**
+
+**Windows:**
 ```
 1. Download Docker Desktop from https://docker.com
 2. Install Docker Desktop (accept all defaults)
@@ -78,7 +88,21 @@ Traditional setups fail because they require:
 7. Open http://localhost:3000
 ```
 
+**Linux:**
+```
+1. Install Docker and Docker Compose
+2. Start Docker service: sudo systemctl start docker
+3. Add user to docker group: sudo usermod -aG docker $USER
+4. Log out and back in
+5. Download SOC Agent files
+6. Run: ./start-soc-agent.sh
+7. Wait 2-3 minutes
+8. Open http://localhost:3000
+```
+
 ### **For Native Users**
+
+**Windows:**
 ```
 1. Download Python 3.10+ from https://python.org
 2. Download Node.js 18+ from https://nodejs.org
@@ -88,6 +112,16 @@ Traditional setups fail because they require:
 6. Wait 2-3 minutes
 7. Double-click start-soc-agent.bat
 8. Open http://localhost:3000
+```
+
+**Linux:**
+```
+1. Install Python 3.10+ and Node.js 18+ using package manager
+2. Download SOC Agent files
+3. Run: ./setup-linux-native.sh
+4. Wait 2-3 minutes
+5. Run: ./start-soc-agent.sh
+6. Open http://localhost:3000
 ```
 
 ## 🔧 **Troubleshooting (For IT Support)**
@@ -110,9 +144,17 @@ Traditional setups fail because they require:
 - **Solution**: Close other applications using ports 8000/3000
 - **Alternative**: Change ports in .env file
 
-#### **"Permission denied"**
+#### **"Permission denied" (Windows)**
 - **Solution**: Run PowerShell as Administrator
 - **Alternative**: Use Docker setup instead
+
+#### **"Permission denied" (Linux)**
+- **Solution**: Make scripts executable: `chmod +x *.sh`
+- **Alternative**: Use Docker setup instead
+
+#### **"Docker not in PATH" (Linux)**
+- **Solution**: Add user to docker group: `sudo usermod -aG docker $USER`
+- **Alternative**: Use native setup instead
 
 ### **Fallback Options**
 1. **Docker fails** → Use native setup

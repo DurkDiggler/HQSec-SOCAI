@@ -17,7 +17,7 @@
 **Linux:**
 ```bash
 # 1. Install Docker and Docker Compose
-# 2. Run: docker compose up --build
+# 2. Run: ./start-soc-agent.sh
 # 3. Open http://localhost:3000
 ```
 

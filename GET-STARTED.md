@@ -30,7 +30,7 @@
 **What You Need:** Docker and Docker Compose
 **Setup Steps:**
 1. **Install Docker and Docker Compose**
-2. **Run:** `docker compose up --build`
+2. **Run:** `./start-soc-agent.sh`
 3. **Wait 2-3 minutes**
 4. **Open** http://localhost:3000
 
@@ -186,7 +186,7 @@
 **For production:** Run `docker compose up --build` and open http://localhost:3000
 
 ### **Linux Users:**
-**For most users:** Run `docker compose up --build` and open http://localhost:3000
+**For most users:** Run `./start-soc-agent.sh` and open http://localhost:3000
 **For developers:** Run `./setup-linux-native.sh` and `./start-soc-agent.sh`
 **For production:** Run `docker compose up --build` and open http://localhost:3000
 
