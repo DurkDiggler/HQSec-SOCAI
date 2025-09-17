@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
+import { settingsAPI } from '../services/api';
 
 const Settings = () => {
   const [loading, setLoading] = useState(true);
@@ -100,9 +101,8 @@ const Settings = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      // In a real implementation, this would fetch from the API
-      // For now, we'll use the default settings
-      setSettings(prev => ({ ...prev }));
+      const data = await settingsAPI.getSettings();
+      setSettings(data);
       toast.success('Settings loaded successfully');
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -123,6 +123,68 @@ const Settings = () => {
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    try {
+      toast.loading('Testing email configuration...');
+      const result = await settingsAPI.testEmail();
+      toast.dismiss();
+      
+      if (result.success) {
+        toast.success(`Email test successful: ${result.message}`);
+      } else {
+        toast.error(`Email test failed: ${result.message}`);
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error testing email:', error);
+      toast.error('Failed to test email configuration');
+    }
+  };
+
+  const handleTestIntel = async () => {
+    try {
+      toast.loading('Testing threat intelligence APIs...');
+      const result = await settingsAPI.testIntel();
+      toast.dismiss();
+      
+      if (result.success) {
+        const results = result.results;
+        const successCount = Object.values(results).filter(r => r.status === 'success').length;
+        const totalCount = Object.keys(results).length;
+        
+        if (successCount > 0) {
+          toast.success(`${successCount}/${totalCount} Intel APIs working`);
+        } else {
+          toast.error('No Intel APIs configured or working');
+        }
+      } else {
+        toast.error('Failed to test Intel APIs');
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error testing Intel APIs:', error);
+      toast.error('Failed to test Intel APIs');
+    }
+  };
+
+  const handleTestDatabase = async () => {
+    try {
+      toast.loading('Testing database connection...');
+      const result = await settingsAPI.testDatabase();
+      toast.dismiss();
+      
+      if (result.success) {
+        toast.success(`Database test successful: ${result.message}`);
+      } else {
+        toast.error(`Database test failed: ${result.message}`);
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error testing database:', error);
+      toast.error('Failed to test database connection');
     }
   };
 
@@ -542,15 +604,24 @@ const Settings = () => {
             </div>
             <div className="card-body">
               <div className="space-y-2">
-                <button className="btn btn-outline btn-sm w-full">
+                <button 
+                  className="btn btn-outline btn-sm w-full"
+                  onClick={handleTestEmail}
+                >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Test Email
                 </button>
-                <button className="btn btn-outline btn-sm w-full">
+                <button 
+                  className="btn btn-outline btn-sm w-full"
+                  onClick={handleTestIntel}
+                >
                   <Globe className="h-4 w-4 mr-2" />
                   Test Intel APIs
                 </button>
-                <button className="btn btn-outline btn-sm w-full">
+                <button 
+                  className="btn btn-outline btn-sm w-full"
+                  onClick={handleTestDatabase}
+                >
                   <Database className="h-4 w-4 mr-2" />
                   Test Database
                 </button>

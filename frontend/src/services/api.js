@@ -108,4 +108,31 @@ export const healthAPI = {
   },
 };
 
+// Settings API
+export const settingsAPI = {
+  // Get current settings
+  getSettings: async () => {
+    const response = await api.get('/settings');
+    return response.data;
+  },
+
+  // Test email configuration
+  testEmail: async () => {
+    const response = await api.post('/settings/test-email');
+    return response.data;
+  },
+
+  // Test threat intelligence APIs
+  testIntel: async () => {
+    const response = await api.post('/settings/test-intel');
+    return response.data;
+  },
+
+  // Test database connection
+  testDatabase: async () => {
+    const response = await api.post('/settings/test-database');
+    return response.data;
+  },
+};
+
 export default api;

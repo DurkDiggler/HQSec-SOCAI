@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from .config import SETTINGS
 from .database import (
     Alert,
     get_alerts,
@@ -245,3 +246,179 @@ async def get_available_filters_endpoint(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error fetching filter options: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch filter options")
+
+
+# Settings API endpoints
+@api_router.get("/settings", response_model=Dict[str, Any])
+async def get_settings_endpoint():
+    """Get current system settings."""
+    try:
+        # Convert settings to dict, excluding sensitive data
+        settings_dict = {
+            # General Settings
+            "app_host": SETTINGS.app_host,
+            "app_port": SETTINGS.app_port,
+            "log_level": SETTINGS.log_level,
+            "log_format": SETTINGS.log_format,
+            
+            # Security Settings
+            "max_request_size": SETTINGS.max_request_size,
+            "rate_limit_requests": SETTINGS.rate_limit_requests,
+            "rate_limit_window": SETTINGS.rate_limit_window,
+            "cors_origins": SETTINGS.cors_origins,
+            
+            # Email Settings
+            "enable_email": SETTINGS.enable_email,
+            "smtp_host": SETTINGS.smtp_host or "",
+            "smtp_port": SETTINGS.smtp_port,
+            "smtp_username": SETTINGS.smtp_username or "",
+            "smtp_password": "***" if SETTINGS.smtp_password else "",
+            "email_from": SETTINGS.email_from or "",
+            "email_to": SETTINGS.email_to,
+            
+            # Autotask Settings
+            "enable_autotask": SETTINGS.enable_autotask,
+            "at_base_url": SETTINGS.at_base_url or "",
+            "at_api_integration_code": SETTINGS.at_api_integration_code or "",
+            "at_username": SETTINGS.at_username or "",
+            "at_secret": "***" if SETTINGS.at_secret else "",
+            "at_account_id": SETTINGS.at_account_id,
+            "at_queue_id": SETTINGS.at_queue_id,
+            "at_ticket_priority": SETTINGS.at_ticket_priority,
+            
+            # Threat Intelligence
+            "otx_api_key": "***" if SETTINGS.otx_api_key else "",
+            "vt_api_key": "***" if SETTINGS.vt_api_key else "",
+            "abuseipdb_api_key": "***" if SETTINGS.abuseipdb_api_key else "",
+            
+            # Scoring
+            "score_high": SETTINGS.score_high,
+            "score_medium": SETTINGS.score_medium,
+            
+            # Database
+            "database_url": SETTINGS.database_url,
+            "postgres_host": SETTINGS.postgres_host or "",
+            "postgres_port": SETTINGS.postgres_port,
+            "postgres_user": SETTINGS.postgres_user or "",
+            "postgres_password": "***" if SETTINGS.postgres_password else "",
+            "postgres_db": SETTINGS.postgres_db or "",
+            
+            # Redis
+            "redis_host": SETTINGS.redis_host,
+            "redis_port": SETTINGS.redis_port,
+            "redis_password": "***" if SETTINGS.redis_password else "",
+            "redis_db": SETTINGS.redis_db,
+            
+            # Webhook Security
+            "webhook_shared_secret": "***" if SETTINGS.webhook_shared_secret else "",
+            "webhook_hmac_secret": "***" if SETTINGS.webhook_hmac_secret else "",
+            "webhook_hmac_header": SETTINGS.webhook_hmac_header,
+            "webhook_hmac_prefix": SETTINGS.webhook_hmac_prefix,
+            
+            # Monitoring
+            "enable_metrics": SETTINGS.enable_metrics,
+            "metrics_port": SETTINGS.metrics_port,
+            "health_check_timeout": SETTINGS.health_check_timeout,
+            
+            # Feature Flags
+            "enable_caching": SETTINGS.enable_caching,
+            "http_timeout": SETTINGS.http_timeout,
+            "ioc_cache_ttl": SETTINGS.ioc_cache_ttl,
+            "max_retries": SETTINGS.max_retries,
+            "retry_delay": SETTINGS.retry_delay,
+        }
+        
+        return settings_dict
+    except Exception as e:
+        logger.error(f"Error fetching settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch settings")
+
+
+@api_router.post("/settings/test-email", response_model=Dict[str, Any])
+async def test_email_endpoint():
+    """Test email configuration by sending a test email."""
+    try:
+        from .notifiers import send_email
+        
+        # Send test email
+        success, message = send_email(
+            subject="SOC Agent - Test Email",
+            body="This is a test email from SOC Agent. If you receive this, email configuration is working correctly.",
+            subtype="plain"
+        )
+        
+        return {
+            "success": success,
+            "message": message,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error testing email: {e}")
+        raise HTTPException(status_code=500, detail=f"Email test failed: {e}")
+
+
+@api_router.post("/settings/test-intel", response_model=Dict[str, Any])
+async def test_intel_endpoint():
+    """Test threat intelligence API configuration."""
+    try:
+        from .intel.client import IntelClient
+        
+        intel_client = IntelClient()
+        results = {}
+        
+        # Test OTX
+        if SETTINGS.otx_api_key:
+            try:
+                test_result = await intel_client.check_ip("8.8.8.8", "otx")
+                results["otx"] = {"status": "success", "message": "OTX API working"}
+            except Exception as e:
+                results["otx"] = {"status": "error", "message": str(e)}
+        else:
+            results["otx"] = {"status": "disabled", "message": "OTX API key not configured"}
+        
+        # Test VirusTotal
+        if SETTINGS.vt_api_key:
+            try:
+                test_result = await intel_client.check_ip("8.8.8.8", "virustotal")
+                results["virustotal"] = {"status": "success", "message": "VirusTotal API working"}
+            except Exception as e:
+                results["virustotal"] = {"status": "error", "message": str(e)}
+        else:
+            results["virustotal"] = {"status": "disabled", "message": "VirusTotal API key not configured"}
+        
+        # Test AbuseIPDB
+        if SETTINGS.abuseipdb_api_key:
+            try:
+                test_result = await intel_client.check_ip("8.8.8.8", "abuseipdb")
+                results["abuseipdb"] = {"status": "success", "message": "AbuseIPDB API working"}
+            except Exception as e:
+                results["abuseipdb"] = {"status": "error", "message": str(e)}
+        else:
+            results["abuseipdb"] = {"status": "disabled", "message": "AbuseIPDB API key not configured"}
+        
+        return {
+            "success": True,
+            "results": results,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error testing intel APIs: {e}")
+        raise HTTPException(status_code=500, detail=f"Intel API test failed: {e}")
+
+
+@api_router.post("/settings/test-database", response_model=Dict[str, Any])
+async def test_database_endpoint(db: Session = Depends(get_db)):
+    """Test database connection."""
+    try:
+        # Simple database test
+        alert_count = db.query(Alert).count()
+        
+        return {
+            "success": True,
+            "message": f"Database connection successful. Found {alert_count} alerts.",
+            "alert_count": alert_count,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error testing database: {e}")
+        raise HTTPException(status_code=500, detail=f"Database test failed: {e}")
