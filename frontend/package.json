@@ -17,13 +17,37 @@
     "clsx": "^1.2.1",
     "date-fns": "^2.30.0",
     "react-hot-toast": "^2.4.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "react-intersection-observer": "^9.5.2",
+    "react-window": "^1.8.8",
+    "react-window-infinite-loader": "^1.0.7",
+    "workbox-webpack-plugin": "^7.0.0",
+    "sharp": "^0.32.6"
+  },
+  "devDependencies": {
+    "@craco/craco": "^7.1.0",
+    "craco-plugin-scoped-css": "^1.0.0",
+    "webpack-bundle-analyzer": "^4.9.1",
+    "terser-webpack-plugin": "^5.3.9",
+    "compression-webpack-plugin": "^10.0.0",
+    "imagemin-webpack-plugin": "^2.4.2",
+    "imagemin-mozjpeg": "^10.0.0",
+    "imagemin-pngquant": "^9.0.2",
+    "imagemin-svgo": "^10.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "eject": "react-scripts eject",
+    "analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
+    "build:prod": "NODE_ENV=production craco build",
+    "build:analyze": "npm run build:prod && npx webpack-bundle-analyzer build/static/js/*.js",
+    "analyze:bundle": "node scripts/analyze-bundle.js",
+    "build:analyze:full": "npm run build:prod && npm run analyze:bundle && npm run analyze",
+    "preload": "node scripts/preload-assets.js",
+    "optimize:images": "node scripts/optimize-images.js",
+    "lighthouse": "lighthouse http://localhost:3000 --output html --output-path ./lighthouse-report.html"
   },
   "eslintConfig": {
     "extends": [
