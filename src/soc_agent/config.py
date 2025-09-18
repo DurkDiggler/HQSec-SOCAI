@@ -175,6 +175,94 @@ class Settings(BaseSettings):
     openai_temperature: float = Field(default=0.1, ge=0.0, le=2.0, env="OPENAI_TEMPERATURE")
     enable_ai_analysis: bool = Field(default=True, env="ENABLE_AI_ANALYSIS")
     
+    # ML Model Configuration
+    ml_enabled: bool = Field(default=True, env="ML_ENABLED")
+    ml_model_storage_path: str = Field(default="./models", env="ML_MODEL_STORAGE_PATH")
+    ml_training_data_path: str = Field(default="./data/training", env="ML_TRAINING_DATA_PATH")
+    ml_model_retention_days: int = Field(default=90, ge=1, le=365, env="ML_MODEL_RETENTION_DAYS")
+    ml_model_update_interval: int = Field(default=24, ge=1, le=168, env="ML_MODEL_UPDATE_INTERVAL")  # hours
+    
+    # Anomaly Detection
+    anomaly_detection_enabled: bool = Field(default=True, env="ANOMALY_DETECTION_ENABLED")
+    anomaly_threshold: float = Field(default=0.5, ge=0.0, le=1.0, env="ANOMALY_THRESHOLD")
+    anomaly_window_size: int = Field(default=100, ge=10, le=1000, env="ANOMALY_WINDOW_SIZE")
+    anomaly_min_samples: int = Field(default=10, ge=5, le=100, env="ANOMALY_MIN_SAMPLES")
+    
+    # Risk Scoring
+    risk_scoring_enabled: bool = Field(default=True, env="RISK_SCORING_ENABLED")
+    risk_model_type: str = Field(default="ensemble", env="RISK_MODEL_TYPE")  # ensemble, gradient_boosting, neural_network
+    risk_update_frequency: int = Field(default=1, ge=1, le=24, env="RISK_UPDATE_FREQUENCY")  # hours
+    
+    # Incident Classification
+    classification_enabled: bool = Field(default=True, env="CLASSIFICATION_ENABLED")
+    classification_confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0, env="CLASSIFICATION_CONFIDENCE_THRESHOLD")
+    auto_classification_enabled: bool = Field(default=True, env="AUTO_CLASSIFICATION_ENABLED")
+    
+    # False Positive Reduction
+    fp_reduction_enabled: bool = Field(default=True, env="FP_REDUCTION_ENABLED")
+    fp_model_confidence_threshold: float = Field(default=0.8, ge=0.0, le=1.0, env="FP_MODEL_CONFIDENCE_THRESHOLD")
+    fp_learning_enabled: bool = Field(default=True, env="FP_LEARNING_ENABLED")
+    
+    # Attack Pattern Recognition
+    pattern_recognition_enabled: bool = Field(default=True, env="PATTERN_RECOGNITION_ENABLED")
+    campaign_detection_window: int = Field(default=24, ge=1, le=168, env="CAMPAIGN_DETECTION_WINDOW")  # hours
+    pattern_similarity_threshold: float = Field(default=0.6, ge=0.0, le=1.0, env="PATTERN_SIMILARITY_THRESHOLD")
+    
+    # ML Model Performance
+    ml_model_monitoring_enabled: bool = Field(default=True, env="ML_MODEL_MONITORING_ENABLED")
+    model_drift_threshold: float = Field(default=0.1, ge=0.0, le=1.0, env="MODEL_DRIFT_THRESHOLD")
+    model_performance_threshold: float = Field(default=0.8, ge=0.0, le=1.0, env="MODEL_PERFORMANCE_THRESHOLD")
+    auto_retrain_enabled: bool = Field(default=True, env="AUTO_RETRAIN_ENABLED")
+    
+    # Stream Processing Configuration
+    kafka_bootstrap_servers: str = Field(default="localhost:9092", env="KAFKA_BOOTSTRAP_SERVERS")
+    kafka_topic_prefix: str = Field(default="soc-agent", env="KAFKA_TOPIC_PREFIX")
+    stream_window_size: int = Field(default=1000, ge=100, le=10000, env="STREAM_WINDOW_SIZE")
+    stream_window_duration_minutes: int = Field(default=60, ge=5, le=1440, env="STREAM_WINDOW_DURATION_MINUTES")
+    
+    # Model Serving Configuration
+    tf_serving_port: int = Field(default=8500, ge=1024, le=65535, env="TF_SERVING_PORT")
+    tf_serving_grpc_port: int = Field(default=8501, ge=1024, le=65535, env="TF_SERVING_GRPC_PORT")
+    tf_serving_model_path: str = Field(default="models/tf_serving", env="TF_SERVING_MODEL_PATH")
+    mlflow_tracking_uri: str = Field(default="sqlite:///mlflow.db", env="MLFLOW_TRACKING_URI")
+    mlflow_registry_uri: str = Field(default="sqlite:///mlflow.db", env="MLFLOW_REGISTRY_URI")
+    mlflow_serving_port: int = Field(default=5000, ge=1024, le=65535, env="MLFLOW_SERVING_PORT")
+    
+    # A/B Testing Configuration
+    ab_testing_enabled: bool = Field(default=True, env="AB_TESTING_ENABLED")
+    ab_test_traffic_split: float = Field(default=0.5, ge=0.0, le=1.0, env="AB_TEST_TRAFFIC_SPLIT")
+    ab_test_minimum_sample_size: int = Field(default=1000, ge=100, le=100000, env="AB_TEST_MINIMUM_SAMPLE_SIZE")
+    ab_test_significance_level: float = Field(default=0.05, ge=0.01, le=0.1, env="AB_TEST_SIGNIFICANCE_LEVEL")
+    
+    # Auto-Retraining Configuration
+    performance_based_retraining: bool = Field(default=True, env="PERFORMANCE_BASED_RETRAINING")
+    drift_based_retraining: bool = Field(default=True, env="DRIFT_BASED_RETRAINING")
+    feedback_based_retraining: bool = Field(default=True, env="FEEDBACK_BASED_RETRAINING")
+    min_feedback_for_retraining: int = Field(default=100, ge=10, le=10000, env="MIN_FEEDBACK_FOR_RETRAINING")
+    max_training_data_size: int = Field(default=10000, ge=1000, le=100000, env="MAX_TRAINING_DATA_SIZE")
+    min_training_data_size: int = Field(default=100, ge=50, le=10000, env="MIN_TRAINING_DATA_SIZE")
+    min_data_completeness: float = Field(default=0.8, ge=0.0, le=1.0, env="MIN_DATA_COMPLETENESS")
+    min_data_freshness: float = Field(default=0.7, ge=0.0, le=1.0, env="MIN_DATA_FRESHNESS")
+    retrain_interval_hours: int = Field(default=24, ge=1, le=168, env="RETRAIN_INTERVAL_HOURS")
+    
+    # Advanced Analytics Configuration
+    threat_hunting_enabled: bool = Field(default=True, env="THREAT_HUNTING_ENABLED")
+    attack_attribution_enabled: bool = Field(default=True, env="ATTACK_ATTRIBUTION_ENABLED")
+    vulnerability_correlation_enabled: bool = Field(default=True, env="VULNERABILITY_CORRELATION_ENABLED")
+    business_impact_analysis_enabled: bool = Field(default=True, env="BUSINESS_IMPACT_ANALYSIS_ENABLED")
+    threat_intelligence_enabled: bool = Field(default=True, env="THREAT_INTELLIGENCE_ENABLED")
+    
+    # Threat Intelligence Feeds
+    virustotal_api_key: Optional[str] = Field(default=None, env="VIRUSTOTAL_API_KEY")
+    misp_url: Optional[str] = Field(default=None, env="MISP_URL")
+    misp_api_key: Optional[str] = Field(default=None, env="MISP_API_KEY")
+    opencti_url: Optional[str] = Field(default=None, env="OPENCTI_URL")
+    opencti_api_key: Optional[str] = Field(default=None, env="OPENCTI_API_KEY")
+    
+    # Analytics Dashboard
+    dashboard_cache_ttl: int = Field(default=300, ge=60, le=3600, env="DASHBOARD_CACHE_TTL")
+    analytics_time_window_hours: int = Field(default=24, ge=1, le=168, env="ANALYTICS_TIME_WINDOW_HOURS")
+    
     # MCP Servers
     kali_mcp_url: str = Field(default="http://localhost:5000", env="KALI_MCP_URL")
     vuln_scanner_url: str = Field(default="http://localhost:5001", env="VULN_SCANNER_URL")

@@ -12,7 +12,8 @@ import {
   Database,
   Zap,
   User,
-  LogOut
+  LogOut,
+  Cpu
 } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 
@@ -25,6 +26,7 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
     { name: 'AI Analysis', href: '/ai', icon: Brain },
+    { name: 'ML Models', href: '/ml', icon: Cpu },
     { name: 'Alerts', href: '/alerts', icon: AlertTriangle },
     { name: 'File Manager', href: '/files', icon: Shield },
     { name: 'Log Search', href: '/search', icon: Activity },
