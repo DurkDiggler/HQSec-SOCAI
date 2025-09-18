@@ -18,6 +18,32 @@ class Settings(BaseSettings):
     rate_limit_window: int = Field(default=3600, ge=1, env="RATE_LIMIT_WINDOW")  # 1 hour
     cors_origins: List[str] = Field(default_factory=lambda: ["*"], env="CORS_ORIGINS")
     
+    # OAuth 2.0 / OpenID Connect
+    oauth_enabled: bool = Field(default=True, env="OAUTH_ENABLED")
+    oauth_provider: str = Field(default="google", env="OAUTH_PROVIDER")  # google, microsoft, generic
+    oauth_client_id: Optional[str] = Field(default=None, env="OAUTH_CLIENT_ID")
+    oauth_client_secret: Optional[str] = Field(default=None, env="OAUTH_CLIENT_SECRET")
+    oauth_redirect_uri: str = Field(default="http://localhost:3000/auth/callback", env="OAUTH_REDIRECT_URI")
+    oauth_scope: str = Field(default="openid email profile", env="OAUTH_SCOPE")
+    oauth_authorization_url: Optional[str] = Field(default=None, env="OAUTH_AUTHORIZATION_URL")
+    oauth_token_url: Optional[str] = Field(default=None, env="OAUTH_TOKEN_URL")
+    oauth_userinfo_url: Optional[str] = Field(default=None, env="OAUTH_USERINFO_URL")
+    
+    # JWT Configuration
+    jwt_secret_key: str = Field(default="your-secret-key-change-in-production", env="JWT_SECRET_KEY")
+    jwt_algorithm: str = Field(default="HS256", env="JWT_ALGORITHM")
+    jwt_access_token_expire_minutes: int = Field(default=30, ge=5, le=1440, env="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
+    jwt_refresh_token_expire_days: int = Field(default=7, ge=1, le=30, env="JWT_REFRESH_TOKEN_EXPIRE_DAYS")
+    
+    # MFA Configuration
+    mfa_enabled: bool = Field(default=True, env="MFA_ENABLED")
+    mfa_issuer_name: str = Field(default="SOC Agent", env="MFA_ISSUER_NAME")
+    mfa_backup_codes_count: int = Field(default=10, ge=5, le=20, env="MFA_BACKUP_CODES_COUNT")
+    
+    # RBAC Configuration
+    rbac_enabled: bool = Field(default=True, env="RBAC_ENABLED")
+    default_user_role: str = Field(default="analyst", env="DEFAULT_USER_ROLE")
+    
     # Feature flags
     enable_email: bool = Field(default=True, env="ENABLE_EMAIL")
     enable_autotask: bool = Field(default=True, env="ENABLE_AUTOTASK")

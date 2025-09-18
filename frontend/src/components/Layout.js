@@ -10,12 +10,17 @@ import {
   Activity,
   Brain,
   Database,
-  Zap
+  Zap,
+  User,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from './AuthProvider';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, logout, hasPermission } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
@@ -127,6 +132,48 @@ const Layout = ({ children }) => {
               <Activity className="h-4 w-4" />
               <span>System Status: Online</span>
             </div>
+            
+            {/* User menu */}
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
+                >
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    {user.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.full_name || user.username}
+                        className="h-8 w-8 rounded-full"
+                      />
+                    ) : (
+                      <User className="h-4 w-4 text-blue-600" />
+                    )}
+                  </div>
+                  <span className="hidden sm:block">{user.full_name || user.username}</span>
+                </button>
+                
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <div className="px-4 py-2 text-sm text-gray-700 border-b">
+                      <div className="font-medium">{user.full_name || user.username}</div>
+                      <div className="text-gray-500">{user.email}</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setUserMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

@@ -14,6 +14,9 @@ from fastapi.security import HTTPBearer
 from .adapters import normalize_event
 from .analyzer import enrich_and_score
 from .api import api_router
+from .auth import create_default_roles
+from .auth_api import router as auth_router
+from .auth_middleware import auth_middleware
 from .autotask import create_autotask_ticket
 from .config import SETTINGS
 from .database import create_tables, get_db, save_alert
@@ -59,6 +62,9 @@ app.add_middleware(CompressionMiddleware)
 # Rate limiting middleware
 app.middleware("http")(rate_limit_middleware)
 
+# Authentication middleware
+app.middleware("http")(auth_middleware)
+
 # Security
 security = HTTPBearer(auto_error=False)
 
@@ -68,7 +74,12 @@ setup_json_logging()
 # Create database tables
 create_tables()
 
+# Initialize default roles
+with get_db() as db:
+    create_default_roles(db)
+
 # Include API routers
+app.include_router(auth_router)
 app.include_router(api_router)
 app.include_router(realtime_router)
 

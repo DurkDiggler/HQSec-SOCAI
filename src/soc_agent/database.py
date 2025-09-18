@@ -25,9 +25,10 @@ from sqlalchemy import (
     Index,
     event,
     text,
+    Table,
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, scoped_session
+from sqlalchemy.orm import sessionmaker, Session, scoped_session, relationship
 from sqlalchemy.pool import StaticPool, QueuePool
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -416,6 +417,233 @@ class ThreatCorrelation(Base):
             "resolution_notes": self.resolution_notes,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# Association table for many-to-many relationship between users and roles
+user_roles = Table(
+    'user_roles',
+    Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
+    Column('role_id', Integer, ForeignKey('roles.id'), primary_key=True),
+    Column('assigned_at', DateTime, default=datetime.utcnow),
+    Column('assigned_by', Integer, ForeignKey('users.id')),
+    Index('idx_user_roles_user_id', 'user_id'),
+    Index('idx_user_roles_role_id', 'role_id'),
+)
+
+
+class User(Base):
+    """User model for authentication and authorization."""
+    
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    username = Column(String(100), nullable=False, unique=True, index=True)
+    full_name = Column(String(255), nullable=True)
+    
+    # Authentication
+    hashed_password = Column(String(255), nullable=True)  # Nullable for OAuth users
+    is_active = Column(Boolean, default=True, index=True)
+    is_verified = Column(Boolean, default=False, index=True)
+    last_login = Column(DateTime, nullable=True, index=True)
+    
+    # OAuth Integration
+    oauth_provider = Column(String(50), nullable=True, index=True)  # google, microsoft, etc.
+    oauth_id = Column(String(255), nullable=True, index=True)
+    oauth_data = Column(JSON, default=dict)
+    
+    # MFA
+    mfa_enabled = Column(Boolean, default=False, index=True)
+    mfa_secret = Column(String(32), nullable=True)  # TOTP secret
+    mfa_backup_codes = Column(JSON, default=list)  # List of backup codes
+    
+    # Profile
+    avatar_url = Column(String(500), nullable=True)
+    department = Column(String(100), nullable=True, index=True)
+    job_title = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    password_changed_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    roles = relationship("Role", secondary=user_roles, back_populates="users")
+    audit_logs = relationship("AuditLog", back_populates="user")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_users_email_active', 'email', 'is_active'),
+        Index('idx_users_username_active', 'username', 'is_active'),
+        Index('idx_users_oauth', 'oauth_provider', 'oauth_id'),
+        Index('idx_users_department', 'department'),
+        Index('idx_users_created_at', 'created_at'),
+    )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert user to dictionary (excluding sensitive data)."""
+        return {
+            "id": self.id,
+            "email": self.email,
+            "username": self.username,
+            "full_name": self.full_name,
+            "is_active": self.is_active,
+            "is_verified": self.is_verified,
+            "last_login": self.last_login.isoformat() if self.last_login else None,
+            "oauth_provider": self.oauth_provider,
+            "mfa_enabled": self.mfa_enabled,
+            "avatar_url": self.avatar_url,
+            "department": self.department,
+            "job_title": self.job_title,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class Role(Base):
+    """Role model for RBAC."""
+    
+    __tablename__ = "roles"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), nullable=False, unique=True, index=True)
+    display_name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    
+    # Permissions (stored as JSON for flexibility)
+    permissions = Column(JSON, default=list)  # List of permission strings
+    
+    # Role hierarchy
+    is_system_role = Column(Boolean, default=False, index=True)  # System roles cannot be deleted
+    parent_role_id = Column(Integer, ForeignKey('roles.id'), nullable=True)
+    
+    # Status
+    is_active = Column(Boolean, default=True, index=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    users = relationship("User", secondary=user_roles, back_populates="roles")
+    parent_role = relationship("Role", remote_side=[id])
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_roles_name_active', 'name', 'is_active'),
+        Index('idx_roles_system', 'is_system_role'),
+        Index('idx_roles_parent', 'parent_role_id'),
+    )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert role to dictionary."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "display_name": self.display_name,
+            "description": self.description,
+            "permissions": self.permissions,
+            "is_system_role": self.is_system_role,
+            "parent_role_id": self.parent_role_id,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class AuditLog(Base):
+    """Enhanced audit logging for compliance."""
+    
+    __tablename__ = "audit_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # User and Session Information
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True, index=True)
+    session_id = Column(String(100), nullable=True, index=True)
+    ip_address = Column(String(45), nullable=True, index=True)  # IPv6 support
+    user_agent = Column(Text, nullable=True)
+    
+    # Event Details
+    event_type = Column(String(50), nullable=False, index=True)  # login, logout, create, update, delete, etc.
+    event_category = Column(String(50), nullable=False, index=True)  # auth, data, system, security
+    resource_type = Column(String(50), nullable=True, index=True)  # alert, user, role, etc.
+    resource_id = Column(String(100), nullable=True, index=True)
+    
+    # Event Description
+    action = Column(String(100), nullable=False, index=True)  # specific action taken
+    description = Column(Text, nullable=True)
+    details = Column(JSON, default=dict)  # Additional event details
+    
+    # Security Context
+    risk_level = Column(String(20), nullable=True, index=True)  # LOW, MEDIUM, HIGH, CRITICAL
+    security_context = Column(JSON, default=dict)  # Security-related metadata
+    
+    # Compliance Fields
+    compliance_tags = Column(JSON, default=list)  # SOX, GDPR, HIPAA, etc.
+    data_classification = Column(String(20), nullable=True, index=True)  # public, internal, confidential, restricted
+    
+    # Result and Status
+    success = Column(Boolean, nullable=False, index=True)
+    error_code = Column(String(50), nullable=True, index=True)
+    error_message = Column(Text, nullable=True)
+    
+    # Timestamps
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    duration_ms = Column(Integer, nullable=True)  # Event duration in milliseconds
+    
+    # Relationships
+    user = relationship("User", back_populates="audit_logs")
+    
+    # Indexes for compliance and security queries
+    __table_args__ = (
+        # Time-based queries
+        Index('idx_audit_logs_timestamp', 'timestamp'),
+        Index('idx_audit_logs_user_timestamp', 'user_id', 'timestamp'),
+        # Event-based queries
+        Index('idx_audit_logs_event_type_timestamp', 'event_type', 'timestamp'),
+        Index('idx_audit_logs_event_category_timestamp', 'event_category', 'timestamp'),
+        # Resource-based queries
+        Index('idx_audit_logs_resource_timestamp', 'resource_type', 'resource_id', 'timestamp'),
+        # Security queries
+        Index('idx_audit_logs_risk_level_timestamp', 'risk_level', 'timestamp'),
+        Index('idx_audit_logs_ip_timestamp', 'ip_address', 'timestamp'),
+        # Compliance queries
+        Index('idx_audit_logs_compliance_timestamp', 'compliance_tags', 'timestamp'),
+        Index('idx_audit_logs_data_classification_timestamp', 'data_classification', 'timestamp'),
+        # Success/failure analysis
+        Index('idx_audit_logs_success_timestamp', 'success', 'timestamp'),
+        # Session tracking
+        Index('idx_audit_logs_session_timestamp', 'session_id', 'timestamp'),
+    )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert audit log to dictionary."""
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "session_id": self.session_id,
+            "ip_address": self.ip_address,
+            "user_agent": self.user_agent,
+            "event_type": self.event_type,
+            "event_category": self.event_category,
+            "resource_type": self.resource_type,
+            "resource_id": self.resource_id,
+            "action": self.action,
+            "description": self.description,
+            "details": self.details,
+            "risk_level": self.risk_level,
+            "security_context": self.security_context,
+            "compliance_tags": self.compliance_tags,
+            "data_classification": self.data_classification,
+            "success": self.success,
+            "error_code": self.error_code,
+            "error_message": self.error_message,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "duration_ms": self.duration_ms,
         }
 
 

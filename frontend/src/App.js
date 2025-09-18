@@ -2,6 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { lazyLoad, preloadCriticalComponents } from './utils/lazyLoading';
+import { AuthProvider } from './components/AuthProvider';
 import Layout from './components/Layout';
 import RealtimeConnection from './components/RealtimeConnection';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -38,27 +39,29 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="App">
-        <RealtimeConnection
-          onAlert={handleRealtimeAlert}
-          onNotification={handleRealtimeNotification}
-          onError={handleRealtimeError}
-        >
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/ai" element={<AIDashboard />} />
-              <Route path="/alerts" element={<Alerts />} />
-              <Route path="/alerts/:id" element={<AlertDetail />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/database" element={<DatabaseMonitorPage />} />
-            </Routes>
-          </Layout>
-        </RealtimeConnection>
-        <Toaster position="top-right" />
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <RealtimeConnection
+            onAlert={handleRealtimeAlert}
+            onNotification={handleRealtimeNotification}
+            onError={handleRealtimeError}
+          >
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/ai" element={<AIDashboard />} />
+                <Route path="/alerts" element={<Alerts />} />
+                <Route path="/alerts/:id" element={<AlertDetail />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/database" element={<DatabaseMonitorPage />} />
+              </Routes>
+            </Layout>
+          </RealtimeConnection>
+          <Toaster position="top-right" />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

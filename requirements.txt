@@ -18,6 +18,10 @@ brotli>=1.0.9
 # Security & monitoring
 cryptography>=41.0
 python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-otp>=0.0.0
+qrcode[pil]>=7.4.2
 
 # AI Integration
 openai>=1.0.0
