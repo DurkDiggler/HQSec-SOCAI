@@ -37,6 +37,8 @@ from .ai.threat_analyzer import AIThreatAnalyzer
 from .ai.risk_assessor import AIRiskAssessor
 from .mcp.server_registry import MCPServerRegistry
 from .realtime import alert_streamer
+from .caching import cached, cache_invalidate, cache_stats, CacheKeys
+from .rate_limiting import get_rate_limit_stats
 
 logger = logging.getLogger(__name__)
 
