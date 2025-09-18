@@ -27,6 +27,7 @@ const Layout = ({ children }) => {
     { name: 'Dashboard', href: '/', icon: BarChart3 },
     { name: 'AI Analysis', href: '/ai', icon: Brain },
     { name: 'ML Models', href: '/ml', icon: Cpu },
+    { name: 'Analytics', href: '/analytics', icon: Activity },
     { name: 'Alerts', href: '/alerts', icon: AlertTriangle },
     { name: 'File Manager', href: '/files', icon: Shield },
     { name: 'Log Search', href: '/search', icon: Activity },

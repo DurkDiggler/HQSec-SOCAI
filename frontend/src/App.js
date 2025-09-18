@@ -21,6 +21,7 @@ const LogSearchPage = lazyLoad(() => import('./pages/LogSearch'));
 const MetricsPage = lazyLoad(() => import('./pages/Metrics'));
 const MLDashboard = lazyLoad(() => import('./components/MLDashboard'));
 const MLAnalysis = lazyLoad(() => import('./components/MLAnalysis'));
+const AnalyticsDashboard = lazyLoad(() => import('./components/analytics/AnalyticsDashboard'));
 
 function App() {
   // Preload critical components after initial load
@@ -58,6 +59,7 @@ function App() {
                 <Route path="/ai" element={<AIDashboard />} />
                 <Route path="/ml" element={<MLDashboard />} />
                 <Route path="/ml/analysis" element={<MLAnalysis />} />
+                <Route path="/analytics" element={<AnalyticsDashboard />} />
                 <Route path="/alerts" element={<Alerts />} />
                 <Route path="/alerts/:id" element={<AlertDetail />} />
                 <Route path="/files" element={<FileManagerPage />} />
