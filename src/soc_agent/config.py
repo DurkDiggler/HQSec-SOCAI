@@ -78,6 +78,30 @@ class Settings(BaseSettings):
     timeseries_batch_size: int = Field(default=1000, ge=100, le=10000, env="TIMESERIES_BATCH_SIZE")
     timeseries_flush_interval: int = Field(default=5, ge=1, le=60, env="TIMESERIES_FLUSH_INTERVAL")
     
+    # Microservices Configuration
+    microservices_enabled: bool = Field(default=True, env="MICROSERVICES_ENABLED")
+    api_gateway_enabled: bool = Field(default=True, env="API_GATEWAY_ENABLED")
+    api_gateway_port: int = Field(default=8000, ge=1000, le=65535, env="API_GATEWAY_PORT")
+    
+    # PostgreSQL Clustering
+    postgres_clustering_enabled: bool = Field(default=True, env="POSTGRES_CLUSTERING_ENABLED")
+    postgres_slave_hosts: Optional[List[str]] = Field(default=None, env="POSTGRES_SLAVE_HOSTS")
+    postgres_connection_pool_size: int = Field(default=10, ge=1, le=100, env="POSTGRES_CONNECTION_POOL_SIZE")
+    postgres_max_overflow: int = Field(default=20, ge=0, le=200, env="POSTGRES_MAX_OVERFLOW")
+    
+    # Inter-Service Communication
+    messaging_enabled: bool = Field(default=True, env="MESSAGING_ENABLED")
+    message_queue_type: str = Field(default="redis", env="MESSAGE_QUEUE_TYPE")  # redis, rabbitmq, kafka
+    message_retry_attempts: int = Field(default=3, ge=1, le=10, env="MESSAGE_RETRY_ATTEMPTS")
+    message_retry_delay: int = Field(default=5, ge=1, le=60, env="MESSAGE_RETRY_DELAY")
+    
+    # Advanced Monitoring
+    monitoring_enabled: bool = Field(default=True, env="MONITORING_ENABLED")
+    prometheus_enabled: bool = Field(default=True, env="PROMETHEUS_ENABLED")
+    prometheus_port: int = Field(default=8000, ge=1000, le=65535, env="PROMETHEUS_PORT")
+    health_check_interval: int = Field(default=30, ge=10, le=300, env="HEALTH_CHECK_INTERVAL")
+    metrics_retention_days: int = Field(default=30, ge=1, le=365, env="METRICS_RETENTION_DAYS")
+    
     # Feature flags
     enable_email: bool = Field(default=True, env="ENABLE_EMAIL")
     enable_autotask: bool = Field(default=True, env="ENABLE_AUTOTASK")

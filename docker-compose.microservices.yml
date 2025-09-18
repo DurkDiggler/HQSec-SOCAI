@@ -1,0 +1,315 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Master Database
+  postgres-master:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: soc_agent
+      POSTGRES_USER: soc_agent
+      POSTGRES_PASSWORD: soc_agent_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_master_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soc_agent -d soc_agent"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Slave Database
+  postgres-slave:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: soc_agent
+      POSTGRES_USER: soc_agent
+      POSTGRES_PASSWORD: soc_agent_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_slave_data:/var/lib/postgresql/data
+    depends_on:
+      - postgres-master
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soc_agent -d soc_agent"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch
+  elasticsearch:
+    image: elasticsearch:8.0.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # InfluxDB
+  influxdb:
+    image: influxdb:2.0
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+      - DOCKER_INFLUXDB_INIT_ORG=soc-agent
+      - DOCKER_INFLUXDB_INIT_BUCKET=soc-metrics
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MinIO (S3-compatible storage)
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API Gateway
+  api-gateway:
+    build: .
+    command: python -m soc_agent.gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - TIMESERIES_URL=http://influxdb:8086
+      - STORAGE_ENDPOINT_URL=http://minio:9000
+      - STORAGE_ACCESS_KEY=minioadmin
+      - STORAGE_SECRET_KEY=minioadmin123
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+
+  # Auth Service
+  auth-service:
+    build: .
+    command: python -m soc_agent.services.auth_service
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Alert Service
+  alert-service:
+    build: .
+    command: python -m soc_agent.services.alert_service
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # AI Service
+  ai-service:
+    build: .
+    command: python -m soc_agent.services.ai_service
+    ports:
+      - "8003:8003"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Intel Service
+  intel-service:
+    build: .
+    command: python -m soc_agent.services.intel_service
+    ports:
+      - "8004:8004"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Response Service
+  response-service:
+    build: .
+    command: python -m soc_agent.services.response_service
+    ports:
+      - "8005:8005"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Analytics Service
+  analytics-service:
+    build: .
+    command: python -m soc_agent.services.analytics_service
+    ports:
+      - "8006:8006"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Notification Service
+  notification-service:
+    build: .
+    command: python -m soc_agent.services.notification_service
+    ports:
+      - "8007:8007"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Storage Service
+  storage-service:
+    build: .
+    command: python -m soc_agent.services.storage_service
+    ports:
+      - "8008:8008"
+    environment:
+      - DATABASE_URL=postgresql://soc_agent:soc_agent_password@postgres-master:5432/soc_agent
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - TIMESERIES_URL=http://influxdb:8086
+      - STORAGE_ENDPOINT_URL=http://minio:9000
+      - STORAGE_ACCESS_KEY=minioadmin
+      - STORAGE_SECRET_KEY=minioadmin123
+    depends_on:
+      postgres-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  # SOC Agent Frontend
+  soc-agent-frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+
+  # Prometheus (Monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+  # Grafana (Monitoring Dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_master_data:
+  postgres_slave_data:
+  redis_data:
+  elasticsearch_data:
+  influxdb_data:
+  minio_data:
+  prometheus_data:
+  grafana_data:
