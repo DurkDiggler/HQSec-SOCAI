@@ -1,1 +1,0 @@
-# SOC Agent - Demo Guide
