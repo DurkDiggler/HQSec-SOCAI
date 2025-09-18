@@ -17,6 +17,7 @@ from .attack_attribution import AttackAttributor
 from .vulnerability_correlation import VulnerabilityCorrelator
 from .business_impact import BusinessImpactAnalyzer
 from .threat_intelligence import ThreatIntelligenceFeed
+from .mcp_analytics_bridge import MCPAnalyticsBridge
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class AnalyticsDashboard:
         self.vulnerability_correlator = VulnerabilityCorrelator()
         self.business_impact_analyzer = BusinessImpactAnalyzer()
         self.threat_intelligence = ThreatIntelligenceFeed()
+        self.mcp_bridge = MCPAnalyticsBridge()
         self.dashboard_cache = {}
         self.cache_ttl = 300  # 5 minutes
 
@@ -72,6 +74,7 @@ class AnalyticsDashboard:
                 "vulnerability_analysis": await self._get_vulnerability_analysis_overview(),
                 "business_impact": await self._get_business_impact_overview(),
                 "threat_intelligence": await self._get_threat_intelligence_overview(),
+                "mcp_integration": await self._get_mcp_integration_overview(),
                 "recommendations": await self._generate_dashboard_recommendations(),
                 "generated_at": datetime.utcnow().isoformat()
             }
@@ -279,6 +282,34 @@ class AnalyticsDashboard:
         except Exception as e:
             logger.error(f"Error getting threat intelligence overview: {e}")
             return {"error": str(e)}
+
+    async def _get_mcp_integration_overview(self) -> Dict[str, Any]:
+        """Gets MCP integration overview."""
+        try:
+            # Get MCP status
+            mcp_status = await self.mcp_bridge.get_mcp_status()
+            
+            # Get available tools
+            available_tools = await self.mcp_bridge.get_available_tools()
+            
+            # Get recent scan history
+            scan_history = await self.mcp_bridge.get_scan_history(limit=10)
+            
+            return {
+                "mcp_status": mcp_status,
+                "available_tools": available_tools,
+                "recent_scans": len(scan_history),
+                "integration_enabled": True,
+                "dashboard_ready": True
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting MCP integration overview: {e}")
+            return {
+                "integration_enabled": False,
+                "dashboard_ready": False,
+                "error": str(e)
+            }
 
     async def _generate_dashboard_recommendations(self) -> List[str]:
         """Generates dashboard recommendations."""

@@ -21,6 +21,7 @@ from .storage_api import router as storage_router
 from .ml_api import router as ml_router
 from .streaming_api import router as streaming_router
 from .analytics_api import router as analytics_router
+from .mcp_analytics_api import router as mcp_analytics_router
 from .autotask import create_autotask_ticket
 from .config import SETTINGS
 from .database import create_tables, get_db, save_alert
@@ -90,6 +91,7 @@ app.include_router(realtime_router)
 app.include_router(ml_router)
 app.include_router(streaming_router)
 app.include_router(analytics_router)
+app.include_router(mcp_analytics_router)
 
 
 def check_rate_limit(client_ip: str) -> bool:
