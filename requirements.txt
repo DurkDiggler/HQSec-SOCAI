@@ -27,6 +27,11 @@ qrcode[pil]>=7.4.2
 openai>=1.0.0
 aiohttp>=3.8.0
 
+# Storage & Search
+boto3>=1.34.0
+elasticsearch>=8.0.0
+influxdb-client>=1.38.0
+
 # Real-time capabilities
 websockets>=12.0
 

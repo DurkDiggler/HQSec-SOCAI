@@ -44,6 +44,40 @@ class Settings(BaseSettings):
     rbac_enabled: bool = Field(default=True, env="RBAC_ENABLED")
     default_user_role: str = Field(default="analyst", env="DEFAULT_USER_ROLE")
     
+    # S3-Compatible Storage Configuration
+    storage_enabled: bool = Field(default=True, env="STORAGE_ENABLED")
+    storage_provider: str = Field(default="s3", env="STORAGE_PROVIDER")  # s3, minio, gcs, azure
+    storage_endpoint_url: Optional[str] = Field(default=None, env="STORAGE_ENDPOINT_URL")
+    storage_access_key: Optional[str] = Field(default=None, env="STORAGE_ACCESS_KEY")
+    storage_secret_key: Optional[str] = Field(default=None, env="STORAGE_SECRET_KEY")
+    storage_bucket_name: str = Field(default="soc-agent-storage", env="STORAGE_BUCKET_NAME")
+    storage_region: str = Field(default="us-east-1", env="STORAGE_REGION")
+    storage_use_ssl: bool = Field(default=True, env="STORAGE_USE_SSL")
+    storage_public_url: Optional[str] = Field(default=None, env="STORAGE_PUBLIC_URL")
+    
+    # Elasticsearch Configuration
+    elasticsearch_enabled: bool = Field(default=True, env="ELASTICSEARCH_ENABLED")
+    elasticsearch_host: str = Field(default="localhost", env="ELASTICSEARCH_HOST")
+    elasticsearch_port: int = Field(default=9200, ge=1, le=65535, env="ELASTICSEARCH_PORT")
+    elasticsearch_username: Optional[str] = Field(default=None, env="ELASTICSEARCH_USERNAME")
+    elasticsearch_password: Optional[str] = Field(default=None, env="ELASTICSEARCH_PASSWORD")
+    elasticsearch_use_ssl: bool = Field(default=False, env="ELASTICSEARCH_USE_SSL")
+    elasticsearch_verify_certs: bool = Field(default=True, env="ELASTICSEARCH_VERIFY_CERTS")
+    elasticsearch_ca_certs: Optional[str] = Field(default=None, env="ELASTICSEARCH_CA_CERTS")
+    elasticsearch_index_prefix: str = Field(default="soc-agent", env="ELASTICSEARCH_INDEX_PREFIX")
+    elasticsearch_log_retention_days: int = Field(default=30, ge=1, le=365, env="ELASTICSEARCH_LOG_RETENTION_DAYS")
+    
+    # Time-Series Database Configuration (InfluxDB)
+    timeseries_enabled: bool = Field(default=True, env="TIMESERIES_ENABLED")
+    timeseries_provider: str = Field(default="influxdb", env="TIMESERIES_PROVIDER")  # influxdb, timescaledb
+    timeseries_url: str = Field(default="http://localhost:8086", env="TIMESERIES_URL")
+    timeseries_token: Optional[str] = Field(default=None, env="TIMESERIES_TOKEN")
+    timeseries_org: str = Field(default="soc-agent", env="TIMESERIES_ORG")
+    timeseries_bucket: str = Field(default="soc-metrics", env="TIMESERIES_BUCKET")
+    timeseries_retention_days: int = Field(default=90, ge=1, le=3650, env="TIMESERIES_RETENTION_DAYS")
+    timeseries_batch_size: int = Field(default=1000, ge=100, le=10000, env="TIMESERIES_BATCH_SIZE")
+    timeseries_flush_interval: int = Field(default=5, ge=1, le=60, env="TIMESERIES_FLUSH_INTERVAL")
+    
     # Feature flags
     enable_email: bool = Field(default=True, env="ENABLE_EMAIL")
     enable_autotask: bool = Field(default=True, env="ENABLE_AUTOTASK")

@@ -17,6 +17,7 @@ from .api import api_router
 from .auth import create_default_roles
 from .auth_api import router as auth_router
 from .auth_middleware import auth_middleware
+from .storage_api import router as storage_router
 from .autotask import create_autotask_ticket
 from .config import SETTINGS
 from .database import create_tables, get_db, save_alert
@@ -81,6 +82,7 @@ with get_db() as db:
 # Include API routers
 app.include_router(auth_router)
 app.include_router(api_router)
+app.include_router(storage_router)
 app.include_router(realtime_router)
 
 

@@ -647,6 +647,191 @@ class AuditLog(Base):
         }
 
 
+class StorageFile(Base):
+    """Storage file metadata model."""
+    
+    __tablename__ = "storage_files"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    object_key = Column(String(500), nullable=False, unique=True, index=True)
+    filename = Column(String(255), nullable=False, index=True)
+    folder = Column(String(100), nullable=False, index=True)
+    size = Column(Integer, nullable=False, index=True)
+    content_type = Column(String(100), nullable=True, index=True)
+    
+    # Storage metadata
+    storage_provider = Column(String(50), nullable=False, index=True)
+    bucket_name = Column(String(100), nullable=False, index=True)
+    public_url = Column(String(1000), nullable=True)
+    
+    # File metadata
+    file_hash = Column(String(64), nullable=True, index=True)  # SHA-256 hash
+    metadata = Column(JSON, default=dict)
+    
+    # Access control
+    is_public = Column(Boolean, default=False, index=True)
+    access_count = Column(Integer, default=0, index=True)
+    last_accessed = Column(DateTime, nullable=True, index=True)
+    
+    # Ownership
+    uploaded_by = Column(Integer, ForeignKey('users.id'), nullable=True, index=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    uploader = relationship("User")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_storage_files_object_key', 'object_key'),
+        Index('idx_storage_files_filename', 'filename'),
+        Index('idx_storage_files_folder', 'folder'),
+        Index('idx_storage_files_size', 'size'),
+        Index('idx_storage_files_uploaded_by', 'uploaded_by'),
+        Index('idx_storage_files_created_at', 'created_at'),
+        Index('idx_storage_files_is_public', 'is_public'),
+        Index('idx_storage_files_storage_provider', 'storage_provider'),
+    )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert storage file to dictionary."""
+        return {
+            "id": self.id,
+            "object_key": self.object_key,
+            "filename": self.filename,
+            "folder": self.folder,
+            "size": self.size,
+            "content_type": self.content_type,
+            "storage_provider": self.storage_provider,
+            "bucket_name": self.bucket_name,
+            "public_url": self.public_url,
+            "file_hash": self.file_hash,
+            "metadata": self.metadata,
+            "is_public": self.is_public,
+            "access_count": self.access_count,
+            "last_accessed": self.last_accessed.isoformat() if self.last_accessed else None,
+            "uploaded_by": self.uploaded_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class ElasticsearchIndex(Base):
+    """Elasticsearch index metadata model."""
+    
+    __tablename__ = "elasticsearch_indices"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    index_name = Column(String(100), nullable=False, unique=True, index=True)
+    index_type = Column(String(50), nullable=False, index=True)  # audit_logs, system_logs, etc.
+    document_count = Column(Integer, default=0, index=True)
+    index_size_bytes = Column(Integer, default=0, index=True)
+    
+    # Index configuration
+    mapping = Column(JSON, default=dict)
+    settings = Column(JSON, default=dict)
+    
+    # Lifecycle management
+    retention_days = Column(Integer, default=30, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_sync = Column(DateTime, nullable=True, index=True)
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_elasticsearch_indices_name', 'index_name'),
+        Index('idx_elasticsearch_indices_type', 'index_type'),
+        Index('idx_elasticsearch_indices_active', 'is_active'),
+        Index('idx_elasticsearch_indices_created_at', 'created_at'),
+    )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert Elasticsearch index to dictionary."""
+        return {
+            "id": self.id,
+            "index_name": self.index_name,
+            "index_type": self.index_type,
+            "document_count": self.document_count,
+            "index_size_bytes": self.index_size_bytes,
+            "mapping": self.mapping,
+            "settings": self.settings,
+            "retention_days": self.retention_days,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "last_sync": self.last_sync.isoformat() if self.last_sync else None,
+        }
+
+
+class TimeSeriesMetric(Base):
+    """Time-series metric metadata model."""
+    
+    __tablename__ = "timeseries_metrics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    metric_name = Column(String(100), nullable=False, index=True)
+    measurement = Column(String(100), nullable=False, index=True)
+    field_name = Column(String(100), nullable=False, index=True)
+    
+    # Metric configuration
+    unit = Column(String(20), nullable=True)
+    description = Column(Text, nullable=True)
+    tags = Column(JSON, default=dict)
+    
+    # Statistics
+    min_value = Column(Float, nullable=True)
+    max_value = Column(Float, nullable=True)
+    avg_value = Column(Float, nullable=True)
+    count = Column(Integer, default=0, index=True)
+    
+    # Time range
+    first_seen = Column(DateTime, nullable=True, index=True)
+    last_seen = Column(DateTime, nullable=True, index=True)
+    
+    # Status
+    is_active = Column(Boolean, default=True, index=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_timeseries_metrics_name', 'metric_name'),
+        Index('idx_timeseries_metrics_measurement', 'measurement'),
+        Index('idx_timeseries_metrics_field', 'field_name'),
+        Index('idx_timeseries_metrics_active', 'is_active'),
+        Index('idx_timeseries_metrics_first_seen', 'first_seen'),
+        Index('idx_timeseries_metrics_last_seen', 'last_seen'),
+    )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert time-series metric to dictionary."""
+        return {
+            "id": self.id,
+            "metric_name": self.metric_name,
+            "measurement": self.measurement,
+            "field_name": self.field_name,
+            "unit": self.unit,
+            "description": self.description,
+            "tags": self.tags,
+            "min_value": self.min_value,
+            "max_value": self.max_value,
+            "avg_value": self.avg_value,
+            "count": self.count,
+            "first_seen": self.first_seen.isoformat() if self.first_seen else None,
+            "last_seen": self.last_seen.isoformat() if self.last_seen else None,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 # Enhanced connection pooling configuration
 def get_database_url():
     """Get database URL from settings."""

@@ -16,6 +16,9 @@ const Settings = lazyLoad(() => import('./pages/Settings'));
 const AIDashboard = lazyLoad(() => import('./components/AIDashboard'));
 const DatabaseMonitorPage = lazyLoad(() => import('./pages/DatabaseMonitor'));
 const APIPerformancePage = lazyLoad(() => import('./pages/APIPerformance'));
+const FileManagerPage = lazyLoad(() => import('./pages/FileManager'));
+const LogSearchPage = lazyLoad(() => import('./pages/LogSearch'));
+const MetricsPage = lazyLoad(() => import('./pages/Metrics'));
 
 function App() {
   // Preload critical components after initial load
@@ -53,6 +56,9 @@ function App() {
                 <Route path="/ai" element={<AIDashboard />} />
                 <Route path="/alerts" element={<Alerts />} />
                 <Route path="/alerts/:id" element={<AlertDetail />} />
+                <Route path="/files" element={<FileManagerPage />} />
+                <Route path="/search" element={<LogSearchPage />} />
+                <Route path="/metrics" element={<MetricsPage />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/database" element={<DatabaseMonitorPage />} />
               </Routes>
