@@ -20,7 +20,11 @@ from .database import create_tables, get_db, save_alert
 from .logging import setup_json_logging
 from .models import EventIn
 from .notifiers import send_email
+from .realtime import alert_streamer, initialize_realtime, cleanup_realtime
+from .realtime_api import realtime_router
 from .security import WebhookAuth
+from .rate_limiting import rate_limit_middleware
+from .compression import CompressionMiddleware
 
 try:
     VERSION = metadata.version("soc_agent")
@@ -49,6 +53,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Compression middleware
+app.add_middleware(CompressionMiddleware)
+
+# Rate limiting middleware
+app.middleware("http")(rate_limit_middleware)
+
 # Security
 security = HTTPBearer(auto_error=False)
 
@@ -58,8 +68,9 @@ setup_json_logging()
 # Create database tables
 create_tables()
 
-# Include API router
+# Include API routers
 app.include_router(api_router)
+app.include_router(realtime_router)
 
 
 def check_rate_limit(client_ip: str) -> bool:
@@ -213,6 +224,31 @@ async def webhook(req: Request):
         db = next(get_db())
         alert = save_alert(db, payload.model_dump(), result, {})
         logger.info(f"Alert saved to database with ID: {alert.id}")
+        
+        # Stream alert in real-time if enabled
+        if SETTINGS.enable_realtime:
+            try:
+                alert_data = {
+                    "id": alert.id,
+                    "source": alert.source,
+                    "event_type": alert.event_type,
+                    "severity": alert.severity,
+                    "message": alert.message,
+                    "timestamp": alert.timestamp.isoformat() if alert.timestamp else None,
+                    "category": alert.category,
+                    "iocs": alert.iocs,
+                    "scores": {
+                        "base": result.get("scores", {}).get("base", 0),
+                        "intel": result.get("scores", {}).get("intel", 0),
+                        "final": result.get("scores", {}).get("final", 0)
+                    },
+                    "recommended_action": result.get("recommended_action", "none"),
+                    "status": alert.status
+                }
+                await alert_streamer.stream_alert(alert_data)
+                logger.info(f"Alert {alert.id} streamed in real-time")
+            except Exception as e:
+                logger.error(f"Failed to stream alert {alert.id}: {e}")
     except Exception as e:
         logger.error(f"Failed to save alert to database: {e}")
         # Continue processing even if database save fails
@@ -275,3 +311,19 @@ async def webhook(req: Request):
         "actions": actions,
         "processed_at": time.time()
     })
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup."""
+    if SETTINGS.enable_realtime:
+        await initialize_realtime()
+        logger.info("Real-time capabilities initialized")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup services on shutdown."""
+    if SETTINGS.enable_realtime:
+        await cleanup_realtime()
+        logger.info("Real-time capabilities cleaned up")

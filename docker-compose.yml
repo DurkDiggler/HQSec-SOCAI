@@ -68,6 +68,8 @@ services:
       - soc-agent
       - frontend
     restart: unless-stopped
+    environment:
+      - ENABLE_WEBSOCKET_PROXY=true
 
   # Redis for caching
   redis:

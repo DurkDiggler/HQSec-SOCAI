@@ -27,11 +27,16 @@ from .database import (
     update_offensive_test_status,
     get_offensive_tests,
     save_threat_correlation,
-    get_threat_correlations
+    get_threat_correlations,
+    get_database_metrics,
+    optimize_database,
+    get_table_statistics,
+    get_query_plan
 )
 from .ai.threat_analyzer import AIThreatAnalyzer
 from .ai.risk_assessor import AIRiskAssessor
 from .mcp.server_registry import MCPServerRegistry
+from .realtime import alert_streamer
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +45,7 @@ api_router = APIRouter(prefix="/api/v1", tags=["alerts"])
 
 
 @api_router.get("/alerts", response_model=Dict[str, Any])
+@cached(ttl=300, key_prefix="alerts")  # Cache for 5 minutes
 async def get_alerts_endpoint(
     skip: int = Query(0, ge=0, description="Number of alerts to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Number of alerts to return"),
@@ -50,7 +56,7 @@ async def get_alerts_endpoint(
     search: Optional[str] = Query(None, description="Search in message, IP, username, or event type"),
     db: Session = Depends(get_db)
 ):
-    """Get alerts with filtering and pagination."""
+    """Get alerts with filtering and pagination - cached for performance."""
     try:
         # Validate parameters
         if skip < 0:
@@ -69,8 +75,16 @@ async def get_alerts_endpoint(
             search=search
         )
         
-        # Get total count for pagination
-        total_count = db.query(Alert).count()
+        # Get total count for pagination (cached separately)
+        cache_key = CacheKeys.alerts(skip=skip, limit=limit, status=status, severity=severity, source=source, category=category, search=search)
+        total_count_cache_key = f"{cache_key}:total_count"
+        
+        # Try to get total count from cache
+        from .caching import cache_manager
+        total_count = cache_manager.get(total_count_cache_key)
+        if total_count is None:
+            total_count = db.query(Alert).count()
+            cache_manager.set(total_count_cache_key, total_count, 300)  # Cache for 5 minutes
         
         return {
             "alerts": [alert.to_dict() for alert in alerts],
@@ -79,7 +93,9 @@ async def get_alerts_endpoint(
                 "limit": limit,
                 "total": total_count,
                 "has_more": skip + limit < total_count
-            }
+            },
+            "cached": True,
+            "cache_ttl": 300
         }
     except Exception as e:
         logger.error(f"Error fetching alerts: {e}")
@@ -107,7 +123,7 @@ async def update_alert_status_endpoint(
     notes: Optional[str] = Query(None, description="Add notes"),
     db: Session = Depends(get_db)
 ):
-    """Update alert status."""
+    """Update alert status and invalidate related caches."""
     valid_statuses = ["new", "acknowledged", "investigating", "resolved", "false_positive"]
     if status not in valid_statuses:
         raise HTTPException(
@@ -118,6 +134,20 @@ async def update_alert_status_endpoint(
     alert = update_alert_status(db, alert_id, status, assigned_to, notes)
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
+    
+    # Stream alert update in real-time if enabled
+    if SETTINGS.enable_realtime:
+        try:
+            update_data = {
+                "status": status,
+                "assigned_to": assigned_to,
+                "notes": notes,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            await alert_streamer.stream_alert_update(alert_id, update_data)
+            logger.info(f"Alert {alert_id} status update streamed in real-time")
+        except Exception as e:
+            logger.error(f"Failed to stream alert {alert_id} update: {e}")
     
     return {"message": "Alert status updated successfully", "alert": alert.to_dict()}
 
@@ -140,67 +170,88 @@ async def get_alert_iocs_endpoint(
 
 
 @api_router.get("/statistics", response_model=Dict[str, Any])
+@cached(ttl=600, key_prefix="statistics")  # Cache for 10 minutes
 async def get_statistics_endpoint(
     days: int = Query(7, ge=1, le=365, description="Number of days to include"),
     db: Session = Depends(get_db)
 ):
-    """Get alert statistics for dashboard."""
+    """Get alert statistics for dashboard - cached for performance."""
     try:
         stats = get_alert_statistics(db, days)
-        return {"statistics": stats}
+        return {
+            "statistics": stats,
+            "cached": True,
+            "cache_ttl": 600
+        }
     except Exception as e:
         logger.error(f"Error fetching statistics: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch statistics")
 
 
 @api_router.get("/statistics/sources")
+@cached(ttl=600, key_prefix="top_sources")  # Cache for 10 minutes
 async def get_top_sources_endpoint(
     limit: int = Query(10, ge=1, le=100, description="Number of top sources to return"),
     db: Session = Depends(get_db)
 ):
-    """Get top alert sources."""
+    """Get top alert sources - cached for performance."""
     try:
         sources = get_top_sources(db, limit)
-        return {"sources": sources}
+        return {
+            "sources": sources,
+            "cached": True,
+            "cache_ttl": 600
+        }
     except Exception as e:
         logger.error(f"Error fetching top sources: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch top sources")
 
 
 @api_router.get("/statistics/event-types")
+@cached(ttl=600, key_prefix="top_event_types")  # Cache for 10 minutes
 async def get_top_event_types_endpoint(
     limit: int = Query(10, ge=1, le=100, description="Number of top event types to return"),
     db: Session = Depends(get_db)
 ):
-    """Get top event types."""
+    """Get top event types - cached for performance."""
     try:
         event_types = get_top_event_types(db, limit)
-        return {"event_types": event_types}
+        return {
+            "event_types": event_types,
+            "cached": True,
+            "cache_ttl": 600
+        }
     except Exception as e:
         logger.error(f"Error fetching top event types: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch top event types")
 
 
 @api_router.get("/statistics/ips")
+@cached(ttl=600, key_prefix="top_ips")  # Cache for 10 minutes
 async def get_top_ips_endpoint(
     limit: int = Query(10, ge=1, le=100, description="Number of top IPs to return"),
     db: Session = Depends(get_db)
 ):
-    """Get top IP addresses."""
+    """Get top IP addresses - cached for performance."""
     try:
         ips = get_top_ips(db, limit)
-        return {"ips": ips}
+        return {
+            "ips": ips,
+            "cached": True,
+            "cache_ttl": 600
+        }
     except Exception as e:
         logger.error(f"Error fetching top IPs: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch top IPs")
 
 
 @api_router.get("/dashboard", response_model=Dict[str, Any])
+@cached(ttl=300, key_prefix="dashboard")  # Cache for 5 minutes
 async def get_dashboard_data_endpoint(
     days: int = Query(7, ge=1, le=365, description="Number of days to include"),
     db: Session = Depends(get_db)
 ):
-    """Get comprehensive dashboard data."""
+    """Get comprehensive dashboard data - cached for performance."""
     try:
         # Get statistics
         stats = get_alert_statistics(db, days)
@@ -223,7 +274,9 @@ async def get_dashboard_data_endpoint(
             "top_event_types": event_types,
             "top_ips": ips,
             "recent_alerts": [alert.to_dict() for alert in recent_alerts],
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.utcnow().isoformat(),
+            "cached": True,
+            "cache_ttl": 300
         }
     except Exception as e:
         logger.error(f"Error fetching dashboard data: {e}")
@@ -791,3 +844,226 @@ async def get_threat_correlations_endpoint(
     except Exception as e:
         logger.error(f"Failed to get threat correlations: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get threat correlations: {e}")
+
+
+# Database Monitoring and Performance Endpoints
+@api_router.get("/database/metrics", response_model=Dict[str, Any])
+async def get_database_metrics_endpoint():
+    """Get database performance metrics."""
+    try:
+        metrics = get_database_metrics()
+        return {
+            "database_metrics": metrics,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get database metrics: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get database metrics: {e}")
+
+
+@api_router.get("/database/statistics", response_model=Dict[str, Any])
+async def get_database_statistics_endpoint():
+    """Get database table statistics."""
+    try:
+        stats = get_table_statistics()
+        return {
+            "table_statistics": stats,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get database statistics: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get database statistics: {e}")
+
+
+@api_router.post("/database/optimize", response_model=Dict[str, Any])
+async def optimize_database_endpoint():
+    """Run database optimization tasks."""
+    try:
+        optimize_database()
+        return {
+            "message": "Database optimization completed successfully",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Database optimization failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Database optimization failed: {e}")
+
+
+@api_router.post("/database/query-plan", response_model=Dict[str, Any])
+async def get_query_plan_endpoint(
+    query: str = Query(..., description="SQL query to analyze")
+):
+    """Get query execution plan for optimization."""
+    try:
+        plan = get_query_plan(query)
+        return {
+            "query_plan": plan,
+            "query": query,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get query plan: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get query plan: {e}")
+
+
+@api_router.get("/database/health", response_model=Dict[str, Any])
+async def database_health_check_endpoint(db: Session = Depends(get_db)):
+    """Comprehensive database health check."""
+    try:
+        # Test basic connectivity
+        alert_count = db.query(Alert).count()
+        
+        # Get performance metrics
+        metrics = get_database_metrics()
+        
+        # Get table statistics
+        stats = get_table_statistics()
+        
+        # Check for slow queries
+        slow_queries = metrics.get("slow_queries", [])
+        has_slow_queries = len(slow_queries) > 0
+        
+        # Check connection pool health
+        pool_stats = metrics.get("connection_pool_stats", {})
+        pool_utilization = (pool_stats.get("checked_out", 0) / max(pool_stats.get("pool_size", 1), 1)) * 100
+        
+        health_status = "healthy"
+        if has_slow_queries:
+            health_status = "degraded"
+        if pool_utilization > 80:
+            health_status = "warning"
+        
+        return {
+            "status": health_status,
+            "alert_count": alert_count,
+            "performance_metrics": metrics,
+            "table_statistics": stats,
+            "slow_queries_detected": has_slow_queries,
+            "connection_pool_utilization": pool_utilization,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+
+# API Performance Monitoring Endpoints
+@api_router.get("/performance/cache", response_model=Dict[str, Any])
+async def get_cache_stats_endpoint():
+    """Get cache performance statistics."""
+    try:
+        stats = cache_stats()
+        return {
+            "cache_stats": stats,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get cache stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get cache stats: {e}")
+
+
+@api_router.get("/performance/rate-limits", response_model=Dict[str, Any])
+async def get_rate_limit_stats_endpoint():
+    """Get rate limiting statistics."""
+    try:
+        stats = get_rate_limit_stats()
+        return {
+            "rate_limit_stats": stats,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get rate limit stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get rate limit stats: {e}")
+
+
+@api_router.post("/performance/cache/clear", response_model=Dict[str, Any])
+async def clear_cache_endpoint(
+    pattern: Optional[str] = Query(None, description="Cache pattern to clear (e.g., 'alerts:*')")
+):
+    """Clear cache entries."""
+    try:
+        if pattern:
+            deleted_count = cache_invalidate(pattern)
+            message = f"Cleared {deleted_count} cache entries matching pattern: {pattern}"
+        else:
+            # Clear all SOC agent caches
+            deleted_count = cache_invalidate("soc_agent:*")
+            message = f"Cleared {deleted_count} SOC agent cache entries"
+        
+        return {
+            "message": message,
+            "deleted_count": deleted_count,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to clear cache: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to clear cache: {e}")
+
+
+@api_router.get("/performance/overview", response_model=Dict[str, Any])
+async def get_performance_overview_endpoint():
+    """Get comprehensive performance overview."""
+    try:
+        # Get cache stats
+        cache_stats_data = cache_stats()
+        
+        # Get rate limit stats
+        rate_limit_stats_data = get_rate_limit_stats()
+        
+        # Get database metrics
+        db_metrics = get_database_metrics()
+        
+        # Calculate overall health
+        health_score = 100
+        issues = []
+        
+        # Check cache health
+        if cache_stats_data.get("status") != "available":
+            health_score -= 20
+            issues.append("Cache unavailable")
+        
+        # Check rate limiting
+        if rate_limit_stats_data.get("status") != "available":
+            health_score -= 10
+            issues.append("Rate limiting unavailable")
+        
+        # Check database performance
+        avg_query_time = db_metrics.get("avg_query_time", 0)
+        if avg_query_time > 1.0:  # More than 1 second
+            health_score -= 15
+            issues.append(f"Slow database queries: {avg_query_time:.3f}s avg")
+        
+        # Check slow queries
+        slow_queries = db_metrics.get("slow_queries", [])
+        if len(slow_queries) > 5:
+            health_score -= 10
+            issues.append(f"Too many slow queries: {len(slow_queries)}")
+        
+        # Determine overall status
+        if health_score >= 90:
+            status = "excellent"
+        elif health_score >= 75:
+            status = "good"
+        elif health_score >= 60:
+            status = "fair"
+        else:
+            status = "poor"
+        
+        return {
+            "overview": {
+                "status": status,
+                "health_score": health_score,
+                "issues": issues,
+                "timestamp": datetime.utcnow().isoformat()
+            },
+            "cache": cache_stats_data,
+            "rate_limiting": rate_limit_stats_data,
+            "database": db_metrics
+        }
+    except Exception as e:
+        logger.error(f"Failed to get performance overview: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get performance overview: {e}")

@@ -8,7 +8,9 @@ import {
   X,
   Shield,
   Activity,
-  Brain
+  Brain,
+  Database,
+  Zap
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -19,6 +21,8 @@ const Layout = ({ children }) => {
     { name: 'Dashboard', href: '/', icon: BarChart3 },
     { name: 'AI Analysis', href: '/ai', icon: Brain },
     { name: 'Alerts', href: '/alerts', icon: AlertTriangle },
+    { name: 'Database Monitor', href: '/database', icon: Database },
+    { name: 'API Performance', href: '/api-performance', icon: Zap },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 

@@ -96,6 +96,14 @@ class Settings(BaseSettings):
     vuln_scanner_url: str = Field(default="http://localhost:5001", env="VULN_SCANNER_URL")
     mcp_timeout: int = Field(default=30, ge=5, le=300, env="MCP_TIMEOUT")
     enable_offensive_testing: bool = Field(default=True, env="ENABLE_OFFENSIVE_TESTING")
+    
+    # Real-time capabilities
+    enable_realtime: bool = Field(default=True, env="ENABLE_REALTIME")
+    websocket_ping_interval: int = Field(default=30, ge=5, le=300, env="WEBSOCKET_PING_INTERVAL")
+    websocket_ping_timeout: int = Field(default=10, ge=5, le=60, env="WEBSOCKET_PING_TIMEOUT")
+    max_websocket_connections: int = Field(default=100, ge=1, le=1000, env="MAX_WEBSOCKET_CONNECTIONS")
+    sse_keepalive_interval: int = Field(default=30, ge=5, le=300, env="SSE_KEEPALIVE_INTERVAL")
+    alert_stream_buffer_size: int = Field(default=1000, ge=100, le=10000, env="ALERT_STREAM_BUFFER_SIZE")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

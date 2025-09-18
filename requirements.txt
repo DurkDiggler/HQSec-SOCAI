@@ -11,8 +11,9 @@ sqlalchemy>=2.0
 alembic>=1.12
 psycopg2-binary>=2.9.0
 
-# Caching
+# Caching & Performance
 redis>=4.5.0
+brotli>=1.0.9
 
 # Security & monitoring
 cryptography>=41.0
@@ -21,6 +22,9 @@ python-multipart>=0.0.6
 # AI Integration
 openai>=1.0.0
 aiohttp>=3.8.0
+
+# Real-time capabilities
+websockets>=12.0
 
 # Development & testing
 pytest>=8.2

@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
+import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+from contextlib import contextmanager
 
 from sqlalchemy import (
     Boolean,
@@ -19,14 +22,56 @@ from sqlalchemy import (
     desc,
     func,
     ForeignKey,
+    Index,
+    event,
+    text,
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.orm import sessionmaker, Session, scoped_session
+from sqlalchemy.pool import StaticPool, QueuePool
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.sql import select
 
 from .config import SETTINGS
 
+# Configure logging
+logger = logging.getLogger(__name__)
+
 Base = declarative_base()
+
+# Database performance monitoring
+class DatabaseMetrics:
+    """Database performance metrics collector."""
+    
+    def __init__(self):
+        self.query_count = 0
+        self.total_query_time = 0.0
+        self.slow_queries = []
+        self.connection_pool_stats = {}
+    
+    def record_query(self, query_time: float, query: str = None):
+        """Record query performance metrics."""
+        self.query_count += 1
+        self.total_query_time += query_time
+        
+        if query_time > 1.0:  # Slow query threshold
+            self.slow_queries.append({
+                'query': query[:100] if query else 'Unknown',
+                'execution_time': query_time,
+                'timestamp': datetime.utcnow()
+            })
+    
+    def get_avg_query_time(self) -> float:
+        """Get average query execution time."""
+        return self.total_query_time / self.query_count if self.query_count > 0 else 0.0
+    
+    def get_slow_queries(self, limit: int = 10) -> List[Dict]:
+        """Get recent slow queries."""
+        return sorted(self.slow_queries, key=lambda x: x['execution_time'], reverse=True)[:limit]
+
+# Global metrics instance
+db_metrics = DatabaseMetrics()
 
 
 class Alert(Base):
@@ -68,6 +113,32 @@ class Alert(Base):
     raw_data = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Composite indexes for common query patterns
+    __table_args__ = (
+        # Index for dashboard queries (status + timestamp)
+        Index('idx_alerts_status_timestamp', 'status', 'timestamp'),
+        # Index for severity-based filtering
+        Index('idx_alerts_severity_timestamp', 'severity', 'timestamp'),
+        # Index for source-based analysis
+        Index('idx_alerts_source_timestamp', 'source', 'timestamp'),
+        # Index for IP-based queries
+        Index('idx_alerts_ip_timestamp', 'ip', 'timestamp'),
+        # Index for category-based filtering
+        Index('idx_alerts_category_timestamp', 'category', 'timestamp'),
+        # Index for assigned user queries
+        Index('idx_alerts_assigned_timestamp', 'assigned_to', 'timestamp'),
+        # Index for score-based filtering
+        Index('idx_alerts_final_score_timestamp', 'final_score', 'timestamp'),
+        # Index for time-based queries
+        Index('idx_alerts_created_at', 'created_at'),
+        # Index for updated_at queries
+        Index('idx_alerts_updated_at', 'updated_at'),
+        # Index for email/ticket status queries
+        Index('idx_alerts_actions', 'email_sent', 'ticket_created'),
+        # Index for event type analysis
+        Index('idx_alerts_event_type_timestamp', 'event_type', 'timestamp'),
+    )
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert alert to dictionary."""
@@ -116,6 +187,12 @@ class AlertStats(Base):
     false_positives = Column(Integer, default=0)
     emails_sent = Column(Integer, default=0)
     tickets_created = Column(Integer, default=0)
+    
+    # Indexes for time-based queries
+    __table_args__ = (
+        Index('idx_alert_stats_date', 'date'),
+        Index('idx_alert_stats_date_desc', 'date', postgresql_using='btree'),
+    )
 
 
 class AIAnalysis(Base):
@@ -144,6 +221,22 @@ class AIAnalysis(Base):
     processing_time = Column(Float, nullable=True)  # seconds
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Indexes for AI analysis queries
+    __table_args__ = (
+        # Index for risk level filtering
+        Index('idx_ai_analyses_risk_level_created', 'risk_level', 'created_at'),
+        # Index for confidence score filtering
+        Index('idx_ai_analyses_confidence_created', 'confidence_score', 'created_at'),
+        # Index for threat classification analysis
+        Index('idx_ai_analyses_classification_created', 'threat_classification', 'created_at'),
+        # Index for model performance analysis
+        Index('idx_ai_analyses_model_created', 'model_used', 'created_at'),
+        # Index for processing time analysis
+        Index('idx_ai_analyses_processing_time', 'processing_time'),
+        # Index for alert relationship queries
+        Index('idx_ai_analyses_alert_id_created', 'alert_id', 'created_at'),
+    )
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert AI analysis to dictionary."""
@@ -206,6 +299,24 @@ class OffensiveTest(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Indexes for offensive test queries
+    __table_args__ = (
+        # Index for status-based filtering
+        Index('idx_offensive_tests_status_created', 'status', 'created_at'),
+        # Index for test type analysis
+        Index('idx_offensive_tests_type_created', 'test_type', 'created_at'),
+        # Index for target-based queries
+        Index('idx_offensive_tests_target_created', 'target', 'created_at'),
+        # Index for authorization tracking
+        Index('idx_offensive_tests_authorized_by', 'authorized_by'),
+        # Index for MCP server analysis
+        Index('idx_offensive_tests_mcp_server', 'mcp_server_used'),
+        # Index for duration analysis
+        Index('idx_offensive_tests_duration', 'duration'),
+        # Index for progress tracking
+        Index('idx_offensive_tests_progress', 'progress'),
+    )
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert offensive test to dictionary."""
         return {
@@ -267,6 +378,24 @@ class ThreatCorrelation(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Indexes for threat correlation queries
+    __table_args__ = (
+        # Index for status-based filtering
+        Index('idx_threat_correlations_status_created', 'status', 'created_at'),
+        # Index for correlation type analysis
+        Index('idx_threat_correlations_type_created', 'correlation_type', 'created_at'),
+        # Index for risk level filtering
+        Index('idx_threat_correlations_risk_level_created', 'risk_level', 'created_at'),
+        # Index for confidence score filtering
+        Index('idx_threat_correlations_confidence_created', 'confidence_score', 'created_at'),
+        # Index for timeline analysis
+        Index('idx_threat_correlations_timeline', 'first_seen', 'last_seen'),
+        # Index for duration analysis
+        Index('idx_threat_correlations_duration', 'duration_hours'),
+        # Index for correlation ID lookups
+        Index('idx_threat_correlations_correlation_id', 'correlation_id'),
+    )
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert threat correlation to dictionary."""
         return {
@@ -290,7 +419,7 @@ class ThreatCorrelation(Base):
         }
 
 
-# Database setup
+# Enhanced connection pooling configuration
 def get_database_url():
     """Get database URL from settings."""
     if SETTINGS.postgres_host and SETTINGS.postgres_user and SETTINGS.postgres_password and SETTINGS.postgres_db:
@@ -299,30 +428,242 @@ def get_database_url():
 
 DATABASE_URL = get_database_url()
 
-# Create engine with appropriate configuration
+# Enhanced engine configuration with enterprise-level settings
 if DATABASE_URL.startswith('sqlite'):
     engine = create_engine(
         DATABASE_URL,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
+        echo=SETTINGS.log_level == "DEBUG",
+        echo_pool=SETTINGS.log_level == "DEBUG",
     )
 else:
-    # PostgreSQL configuration with connection pooling
+    # PostgreSQL configuration with enterprise-level connection pooling
     engine = create_engine(
         DATABASE_URL,
-        pool_size=20,
-        max_overflow=30,
-        pool_pre_ping=True,
+        pool_size=20,  # Base pool size
+        max_overflow=30,  # Additional connections when needed
+        pool_pre_ping=True,  # Validate connections before use
         pool_recycle=3600,  # Recycle connections every hour
-        echo=False  # Set to True for SQL debugging
+        pool_timeout=30,  # Timeout for getting connection from pool
+        pool_reset_on_return='commit',  # Reset connections on return
+        echo=SETTINGS.log_level == "DEBUG",
+        echo_pool=SETTINGS.log_level == "DEBUG",
+        # Performance optimizations
+        connect_args={
+            "options": "-c default_transaction_isolation=read_committed",
+            "application_name": "soc_agent",
+            "connect_timeout": 10,
+        }
     )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Enhanced session configuration
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+    expire_on_commit=False  # Prevent lazy loading issues
+)
+
+# Scoped session for thread safety
+ScopedSession = scoped_session(SessionLocal)
+
+# Query performance monitoring
+@event.listens_for(Engine, "before_cursor_execute")
+def receive_before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    """Record query start time."""
+    context._query_start_time = time.time()
+
+@event.listens_for(Engine, "after_cursor_execute")
+def receive_after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    """Record query execution time."""
+    if hasattr(context, '_query_start_time'):
+        query_time = time.time() - context._query_start_time
+        db_metrics.record_query(query_time, statement)
+
+# Enhanced database session management
+@contextmanager
+def get_db_session():
+    """Enhanced database session context manager with error handling."""
+    session = ScopedSession()
+    try:
+        yield session
+        session.commit()
+    except SQLAlchemyError as e:
+        session.rollback()
+        logger.error(f"Database error: {e}")
+        raise
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Unexpected error: {e}")
+        raise
+    finally:
+        session.close()
 
 
 def create_tables():
-    """Create all database tables."""
+    """Create all database tables with optimized indexes."""
     Base.metadata.create_all(bind=engine)
+    
+    # Create additional performance indexes for PostgreSQL
+    if not DATABASE_URL.startswith('sqlite'):
+        with engine.connect() as conn:
+            # Create GIN indexes for JSON columns (PostgreSQL only)
+            try:
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_alerts_iocs_gin 
+                    ON alerts USING GIN (iocs);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_alerts_intel_data_gin 
+                    ON alerts USING GIN (intel_data);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_alerts_raw_data_gin 
+                    ON alerts USING GIN (raw_data);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ai_analyses_ai_insights_gin 
+                    ON ai_analyses USING GIN (ai_insights);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ai_analyses_recommendations_gin 
+                    ON ai_analyses USING GIN (recommendations);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ai_analyses_attack_vectors_gin 
+                    ON ai_analyses USING GIN (attack_vectors);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ai_analyses_iocs_gin 
+                    ON ai_analyses USING GIN (iocs);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ai_analyses_mitigation_strategies_gin 
+                    ON ai_analyses USING GIN (mitigation_strategies);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ai_analyses_pattern_analysis_gin 
+                    ON ai_analyses USING GIN (pattern_analysis);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_offensive_tests_results_gin 
+                    ON offensive_tests USING GIN (results);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_offensive_tests_findings_gin 
+                    ON offensive_tests USING GIN (findings);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_offensive_tests_vulnerabilities_gin 
+                    ON offensive_tests USING GIN (vulnerabilities);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_offensive_tests_recommendations_gin 
+                    ON offensive_tests USING GIN (recommendations);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_offensive_tests_test_parameters_gin 
+                    ON offensive_tests USING GIN (test_parameters);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_threat_correlations_alert_ids_gin 
+                    ON threat_correlations USING GIN (alert_ids);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_threat_correlations_threat_actors_gin 
+                    ON threat_correlations USING GIN (threat_actors);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_threat_correlations_attack_techniques_gin 
+                    ON threat_correlations USING GIN (attack_techniques);
+                """))
+                conn.execute(text("""
+                    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_threat_correlations_ioc_matches_gin 
+                    ON threat_correlations USING GIN (ioc_matches);
+                """))
+                conn.commit()
+                logger.info("Created GIN indexes for JSON columns")
+            except Exception as e:
+                logger.warning(f"Could not create GIN indexes: {e}")
+
+def get_database_metrics() -> Dict[str, Any]:
+    """Get database performance metrics."""
+    return {
+        "query_count": db_metrics.query_count,
+        "total_query_time": db_metrics.total_query_time,
+        "avg_query_time": db_metrics.get_avg_query_time(),
+        "slow_queries": db_metrics.get_slow_queries(),
+        "connection_pool_stats": {
+            "pool_size": engine.pool.size(),
+            "checked_in": engine.pool.checkedin(),
+            "checked_out": engine.pool.checkedout(),
+            "overflow": engine.pool.overflow(),
+            "invalid": engine.pool.invalid(),
+        }
+    }
+
+def optimize_database():
+    """Run database optimization tasks."""
+    if DATABASE_URL.startswith('sqlite'):
+        # SQLite optimization
+        with engine.connect() as conn:
+            conn.execute(text("PRAGMA optimize;"))
+            conn.execute(text("VACUUM;"))
+            logger.info("SQLite database optimized")
+    else:
+        # PostgreSQL optimization
+        with engine.connect() as conn:
+            # Update table statistics
+            conn.execute(text("ANALYZE;"))
+            # Reindex if needed (run during maintenance window)
+            # conn.execute(text("REINDEX DATABASE soc_agent;"))
+            logger.info("PostgreSQL database optimized")
+
+def get_query_plan(query: str) -> Dict[str, Any]:
+    """Get query execution plan for optimization."""
+    if DATABASE_URL.startswith('sqlite'):
+        with engine.connect() as conn:
+            result = conn.execute(text(f"EXPLAIN QUERY PLAN {query}"))
+            return {"plan": [dict(row) for row in result]}
+    else:
+        with engine.connect() as conn:
+            result = conn.execute(text(f"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {query}"))
+            return {"plan": result.fetchone()[0]}
+
+def get_table_statistics() -> Dict[str, Any]:
+    """Get table statistics for monitoring."""
+    stats = {}
+    
+    with engine.connect() as conn:
+        if DATABASE_URL.startswith('sqlite'):
+            # SQLite table info
+            for table_name in ['alerts', 'ai_analyses', 'offensive_tests', 'threat_correlations']:
+                result = conn.execute(text(f"SELECT COUNT(*) as count FROM {table_name}"))
+                count = result.fetchone()[0]
+                stats[table_name] = {"row_count": count}
+        else:
+            # PostgreSQL table statistics
+            result = conn.execute(text("""
+                SELECT 
+                    schemaname,
+                    tablename,
+                    n_tup_ins as inserts,
+                    n_tup_upd as updates,
+                    n_tup_del as deletes,
+                    n_live_tup as live_rows,
+                    n_dead_tup as dead_rows,
+                    last_vacuum,
+                    last_autovacuum,
+                    last_analyze,
+                    last_autoanalyze
+                FROM pg_stat_user_tables 
+                WHERE tablename IN ('alerts', 'ai_analyses', 'offensive_tests', 'threat_correlations')
+                ORDER BY tablename;
+            """))
+            stats = {row[1]: dict(row._mapping) for row in result}
+    
+    return stats
 
 
 def get_db() -> Session:
@@ -385,11 +726,12 @@ def get_alerts(
     category: Optional[str] = None,
     search: Optional[str] = None
 ) -> List[Alert]:
-    """Get alerts with filtering and pagination."""
+    """Get alerts with filtering and pagination - optimized for performance."""
     
+    # Use select for better performance
     query = db.query(Alert)
     
-    # Apply filters
+    # Apply filters with proper indexing
     if status:
         query = query.filter(Alert.status == status)
     if severity is not None:
@@ -407,10 +749,64 @@ def get_alerts(
             (Alert.event_type.ilike(search_term))
         )
     
-    # Order by timestamp descending
+    # Order by timestamp descending (uses index)
     query = query.order_by(desc(Alert.timestamp))
     
+    # Apply pagination
     return query.offset(skip).limit(limit).all()
+
+def get_alerts_optimized(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    status: Optional[str] = None,
+    severity: Optional[int] = None,
+    source: Optional[str] = None,
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None
+) -> Dict[str, Any]:
+    """Get alerts with advanced optimization and metadata."""
+    
+    # Build optimized query
+    query = db.query(Alert)
+    
+    # Apply filters
+    if status:
+        query = query.filter(Alert.status == status)
+    if severity is not None:
+        query = query.filter(Alert.severity == severity)
+    if source:
+        query = query.filter(Alert.source == source)
+    if category:
+        query = query.filter(Alert.category == category)
+    if start_date:
+        query = query.filter(Alert.timestamp >= start_date)
+    if end_date:
+        query = query.filter(Alert.timestamp <= end_date)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Alert.message.ilike(search_term)) |
+            (Alert.ip.ilike(search_term)) |
+            (Alert.username.ilike(search_term)) |
+            (Alert.event_type.ilike(search_term))
+        )
+    
+    # Get total count for pagination
+    total_count = query.count()
+    
+    # Apply ordering and pagination
+    alerts = query.order_by(desc(Alert.timestamp)).offset(skip).limit(limit).all()
+    
+    return {
+        "alerts": alerts,
+        "total_count": total_count,
+        "page": (skip // limit) + 1,
+        "per_page": limit,
+        "total_pages": (total_count + limit - 1) // limit
+    }
 
 
 def get_alert_by_id(db: Session, alert_id: int) -> Optional[Alert]:

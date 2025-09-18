@@ -15,6 +15,8 @@ import StatCard from '../components/StatCard';
 import Chart from '../components/Chart';
 import RecentAlerts from '../components/RecentAlerts';
 import LoadingSpinner from '../components/LoadingSpinner';
+import RealtimeAlerts from '../components/RealtimeAlerts';
+import RealtimeNotifications from '../components/RealtimeNotifications';
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -200,6 +202,23 @@ const Dashboard = () => {
         </div>
         <div className="card-body p-0">
           <RecentAlerts alerts={recent_alerts} />
+        </div>
+      </div>
+
+      {/* Real-time Components */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Real-time Alerts */}
+        <div className="card">
+          <div className="card-body">
+            <RealtimeAlerts maxAlerts={10} />
+          </div>
+        </div>
+
+        {/* Real-time Notifications */}
+        <div className="card">
+          <div className="card-body">
+            <RealtimeNotifications maxNotifications={15} />
+          </div>
         </div>
       </div>
     </div>
