@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleSidebar, setSidebarOpen, setTheme } from '../store/slices/uiSlice';
+import RealtimeNotifications from './RealtimeNotifications';
+import ConnectionStatus from './ConnectionStatus';
 import type { BaseComponentProps } from '../types';
 
 interface NavigationItem {
@@ -186,14 +188,11 @@ const Layout: React.FC<BaseComponentProps> = ({ children }) => {
                 )}
               </button>
 
-              {/* Notifications */}
-              <button
-                type="button"
-                className="p-2 text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-100"
-              >
-                <span className="sr-only">View notifications</span>
-                <Bell className="h-5 w-5" />
-              </button>
+              {/* Real-time Notifications */}
+              <RealtimeNotifications />
+
+              {/* Connection Status */}
+              <ConnectionStatus />
 
               {/* User menu */}
               {isAuthenticated && user && (

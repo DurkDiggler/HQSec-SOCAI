@@ -4,6 +4,7 @@ import { useGetDashboardDataQuery, useGetStatisticsQuery } from '../store/api';
 import { Card, Grid, Container } from '../components/layout';
 import { LineChart, BarChart, PieChart } from '../components/charts';
 import { LoadingSpinner } from '../components/ui';
+import RealtimeMetrics from '../components/RealtimeMetrics';
 import { 
   AlertTriangle, 
   Shield, 
@@ -148,6 +149,9 @@ const Dashboard: React.FC = () => {
             );
           })}
         </Grid>
+
+        {/* Real-time Metrics */}
+        <RealtimeMetrics />
 
         {/* Charts Row */}
         <Grid cols={2} gap="lg">
