@@ -666,7 +666,7 @@ class StorageFile(Base):
     
     # File metadata
     file_hash = Column(String(64), nullable=True, index=True)  # SHA-256 hash
-    metadata = Column(JSON, default=dict)
+    file_metadata = Column(JSON, default=dict)
     
     # Access control
     is_public = Column(Boolean, default=False, index=True)

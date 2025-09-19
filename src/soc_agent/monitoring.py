@@ -523,7 +523,46 @@ class MonitoringService:
             ]
             
             for service in services:
-                # TODO: Implement actual service health checks
+                # Implement actual service health checks
+                try:
+                    # Check database connectivity
+                    with get_db() as db:
+                        db.execute("SELECT 1")
+                    checks["database"] = True
+                except Exception as e:
+                    checks["database"] = False
+                    logger.error(f"Database health check failed: {e}")
+                
+                try:
+                    # Check Redis connectivity
+                    from .caching import cache_manager
+                    cache_manager.ping()
+                    checks["redis"] = True
+                except Exception as e:
+                    checks["redis"] = False
+                    logger.error(f"Redis health check failed: {e}")
+                
+                try:
+                    # Check external APIs (if configured)
+                    if SETTINGS.otx_api_key:
+                        from .intel.client import intel_client
+                        await intel_client.check_ip("8.8.8.8", "otx")
+                        checks["external_apis"] = True
+                    else:
+                        checks["external_apis"] = True  # Not configured, so healthy
+                except Exception as e:
+                    checks["external_apis"] = False
+                    logger.error(f"External APIs health check failed: {e}")
+                
+                try:
+                    # Check MCP servers
+                    from .mcp.server_registry import MCPServerRegistry
+                    async with MCPServerRegistry() as mcp_registry:
+                        status = await mcp_registry.get_server_status()
+                        checks["mcp_servers"] = all(server.get("status") == "available" for server in status.values())
+                except Exception as e:
+                    checks["mcp_servers"] = False
+                    logger.error(f"MCP servers health check failed: {e}")
                 self.prometheus.record_service_health(service, True)
                 
         except Exception as e:

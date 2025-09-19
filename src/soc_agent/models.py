@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field, field_validator
+from .security_utils import SecurityValidator
 
 
 class EventIn(BaseModel):
@@ -39,12 +40,9 @@ class EventIn(BaseModel):
     def validate_ip(cls, v):
         if v is None:
             return v
-        try:
-            # Validate both IPv4 and IPv6
-            ipaddress.ip_address(v)
-            return v
-        except ValueError:
+        if not SecurityValidator.validate_ip_address(v):
             raise ValueError("Invalid IP address format")
+        return v
 
     @field_validator("timestamp")
     @classmethod
@@ -63,8 +61,7 @@ class EventIn(BaseModel):
     def validate_username(cls, v):
         if v is None:
             return v
-        # Basic username validation - alphanumeric, dots, underscores, hyphens
-        if not re.match(r"^[a-zA-Z0-9._-]+$", v):
+        if not SecurityValidator.validate_username(v):
             raise ValueError("Username contains invalid characters")
         return v
 
@@ -73,18 +70,8 @@ class EventIn(BaseModel):
     def validate_message(cls, v):
         if v is None:
             return v
-        # Check for potential injection attempts
-        dangerous_patterns = [
-            r"<script",
-            r"javascript:",
-            r"on\w+\s*=",
-            r"eval\s*\(",
-            r"exec\s*\(",
-        ]
-        for pattern in dangerous_patterns:
-            if re.search(pattern, v, re.IGNORECASE):
-                raise ValueError("Message contains potentially dangerous content")
-        return v
+        # Sanitize the message content
+        return SecurityValidator.sanitize_string(v)
 
     model_config = {
         "extra": "forbid",  # Changed from "allow" to "forbid" for security

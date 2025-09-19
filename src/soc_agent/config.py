@@ -16,7 +16,10 @@ class Settings(BaseSettings):
     max_request_size: int = Field(default=1048576, ge=1024, env="MAX_REQUEST_SIZE")  # 1MB
     rate_limit_requests: int = Field(default=100, ge=1, env="RATE_LIMIT_REQUESTS")
     rate_limit_window: int = Field(default=3600, ge=1, env="RATE_LIMIT_WINDOW")  # 1 hour
-    cors_origins: List[str] = Field(default_factory=lambda: ["*"], env="CORS_ORIGINS")
+    cors_origins: List[str] = Field(
+        default_factory=lambda: ["http://localhost:3000", "http://localhost:3001"], 
+        env="CORS_ORIGINS"
+    )
     
     # OAuth 2.0 / OpenID Connect
     oauth_enabled: bool = Field(default=True, env="OAUTH_ENABLED")

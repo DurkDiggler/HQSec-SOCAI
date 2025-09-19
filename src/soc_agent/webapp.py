@@ -33,6 +33,8 @@ from .realtime_api import realtime_router
 from .security import WebhookAuth
 from .rate_limiting import rate_limit_middleware
 from .compression import CompressionMiddleware
+from .security_utils import SecurityHeaders
+from .request_logging import RequestLoggingMiddleware
 
 try:
     VERSION = metadata.version("soc_agent")
@@ -61,6 +63,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Request logging middleware
+app.add_middleware(RequestLoggingMiddleware, log_body=True)
+
 # Compression middleware
 app.add_middleware(CompressionMiddleware)
 
@@ -69,6 +74,14 @@ app.middleware("http")(rate_limit_middleware)
 
 # Authentication middleware
 app.middleware("http")(auth_middleware)
+
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for header, value in SecurityHeaders.get_security_headers().items():
+        response.headers[header] = value
+    return response
 
 # Security
 security = HTTPBearer(auto_error=False)

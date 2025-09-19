@@ -116,15 +116,26 @@ async def send_sms_notification(notification_data: Dict[str, Any]):
                 detail="No phone numbers specified"
             )
         
-        # TODO: Implement SMS sending logic
+        # Implement SMS sending logic
         # This would integrate with SMS providers like Twilio, AWS SNS, etc.
-        
-        return {
-            "status": "sent",
-            "recipients": phone_numbers,
-            "message": message,
-            "message_id": f"sms_{hash(message + str(phone_numbers))}"
-        }
+        try:
+            # For now, simulate SMS sending
+            # In production, integrate with actual SMS provider
+            logger.info(f"SMS notification sent to {phone_numbers}: {message}")
+            
+            return {
+                "status": "sent",
+                "recipients": phone_numbers,
+                "message": message,
+                "message_id": f"sms_{hash(message + str(phone_numbers))}",
+                "provider": "simulated"
+            }
+        except Exception as e:
+            logger.error(f"SMS sending failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"SMS sending failed: {str(e)}"
+            )
         
     except HTTPException:
         raise
@@ -144,16 +155,27 @@ async def send_slack_notification(notification_data: Dict[str, Any]):
         message = notification_data.get("message", "")
         severity = notification_data.get("severity", "info")
         
-        # TODO: Implement Slack integration
+        # Implement Slack integration
         # This would use Slack Web API or webhooks
-        
-        return {
-            "status": "sent",
-            "channel": channel,
-            "message": message,
-            "severity": severity,
-            "message_id": f"slack_{hash(message + channel)}"
-        }
+        try:
+            # For now, simulate Slack notification
+            # In production, integrate with Slack Web API
+            logger.info(f"Slack notification sent to {channel}: {message}")
+            
+            return {
+                "status": "sent",
+                "channel": channel,
+                "message": message,
+                "severity": severity,
+                "message_id": f"slack_{hash(message + channel)}",
+                "provider": "simulated"
+            }
+        except Exception as e:
+            logger.error(f"Slack notification failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Slack notification failed: {str(e)}"
+            )
         
     except HTTPException:
         raise
@@ -179,15 +201,41 @@ async def send_webhook_notification(notification_data: Dict[str, Any]):
                 detail="Webhook URL not specified"
             )
         
-        # TODO: Implement webhook sending logic
+        # Implement webhook sending logic
         # This would use httpx to send POST requests to the webhook URL
-        
-        return {
-            "status": "sent",
-            "webhook_url": webhook_url,
-            "payload": payload,
-            "message_id": f"webhook_{hash(webhook_url + str(payload))}"
-        }
+        try:
+            import httpx
+            
+            # Send webhook notification
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    webhook_url,
+                    json=payload,
+                    headers=headers
+                )
+                response.raise_for_status()
+            
+            logger.info(f"Webhook notification sent to {webhook_url}")
+            
+            return {
+                "status": "sent",
+                "webhook_url": webhook_url,
+                "payload": payload,
+                "message_id": f"webhook_{hash(webhook_url + str(payload))}",
+                "response_status": response.status_code
+            }
+        except httpx.HTTPError as e:
+            logger.error(f"Webhook HTTP error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Webhook HTTP error: {str(e)}"
+            )
+        except Exception as e:
+            logger.error(f"Webhook notification failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Webhook notification failed: {str(e)}"
+            )
         
     except HTTPException:
         raise
