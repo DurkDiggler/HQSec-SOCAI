@@ -276,3 +276,58 @@ export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
+
+// MCP Tools types
+export interface MCPTool {
+  name: string;
+  description: string;
+  category: string;
+  parameters?: MCPToolParameter[];
+  output_type?: string;
+  examples?: string[];
+}
+
+export interface MCPToolParameter {
+  name: string;
+  type: string;
+  description: string;
+  required: boolean;
+  default_value?: any;
+  options?: string[];
+}
+
+export interface MCPToolExecution {
+  tool_name: string;
+  parameters: Record<string, any>;
+  output?: string;
+  status: 'success' | 'error' | 'running';
+  execution_time?: number;
+  metadata?: Record<string, any>;
+}
+
+// LLM types
+export interface LLMResponse {
+  response: string;
+  suggested_tool?: string;
+  tool_parameters?: Record<string, any>;
+  confidence: number;
+  reasoning?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ChatMessage {
+  id: string;
+  type: 'user' | 'assistant' | 'system' | 'tool';
+  content: string;
+  timestamp: Date;
+  tool?: MCPTool;
+  status?: 'pending' | 'success' | 'error';
+  metadata?: any;
+}
+
+// Chat context types
+export interface ChatContext {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: Date;
+}

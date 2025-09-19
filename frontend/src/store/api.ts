@@ -210,6 +210,35 @@ export const api = createApi({
       query: () => '/mcp/capabilities',
     }),
 
+    // MCP Tools endpoints
+    getMCPTools: builder.query<ApiResponse<MCPTool[]>, void>({
+      query: () => '/mcp/tools',
+      providesTags: ['MCPTool'],
+    }),
+
+    executeMCPTool: builder.mutation<
+      ApiResponse<any>,
+      { tool_name: string; parameters?: any }
+    >({
+      query: ({ tool_name, parameters }) => ({
+        url: '/mcp/execute',
+        method: 'POST',
+        body: { tool_name, parameters },
+      }),
+    }),
+
+    // LLM endpoints
+    analyzeWithLLM: builder.mutation<
+      ApiResponse<LLMResponse>,
+      { message: string; context?: any[] }
+    >({
+      query: ({ message, context }) => ({
+        url: '/ai/analyze',
+        method: 'POST',
+        body: { message, context },
+      }),
+    }),
+
     // Settings endpoints
     getSettings: builder.query<ApiResponse<Settings>, void>({
       query: () => '/settings',
@@ -276,6 +305,11 @@ export const {
   useTestExploitMutation,
   useGetMCPStatusQuery,
   useGetMCPCapabilitiesQuery,
+  useGetMCPToolsQuery,
+  useExecuteMCPToolMutation,
+  
+  // LLM
+  useAnalyzeWithLLMMutation,
   
   // Settings
   useGetSettingsQuery,

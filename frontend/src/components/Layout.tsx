@@ -16,7 +16,8 @@ import {
   Cpu,
   Bell,
   Sun,
-  Moon
+  Moon,
+  MessageSquare
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleSidebar, setSidebarOpen, setTheme } from '../store/slices/uiSlice';
@@ -39,15 +40,9 @@ const Layout: React.FC<BaseComponentProps> = ({ children }) => {
 
   const navigation: NavigationItem[] = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
-    { name: 'AI Analysis', href: '/ai', icon: Brain, permission: 'ai:analyze' },
-    { name: 'ML Models', href: '/ml', icon: Cpu, permission: 'ml:manage' },
-    { name: 'Analytics', href: '/analytics', icon: Activity, permission: 'analytics:view' },
+    { name: 'Chat', href: '/chat', icon: MessageSquare, permission: 'ai:analyze' },
     { name: 'Alerts', href: '/alerts', icon: AlertTriangle, permission: 'alerts:read' },
-    { name: 'File Manager', href: '/files', icon: Shield, permission: 'files:manage' },
-    { name: 'Log Search', href: '/search', icon: Activity, permission: 'logs:search' },
     { name: 'Metrics', href: '/metrics', icon: BarChart3, permission: 'metrics:view' },
-    { name: 'Database Monitor', href: '/database', icon: Database, permission: 'database:monitor' },
-    { name: 'API Performance', href: '/api-performance', icon: Zap, permission: 'api:monitor' },
     { name: 'Settings', href: '/settings', icon: Settings, permission: 'settings:read' },
   ];
 

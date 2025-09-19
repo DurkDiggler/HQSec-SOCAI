@@ -27,6 +27,7 @@ const queryClient = new QueryClient({
 
 // Lazy load pages for better performance
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Chat = React.lazy(() => import('./pages/Chat'));
 const Alerts = React.lazy(() => import('./pages/Alerts'));
 const AlertDetail = React.lazy(() => import('./pages/AlertDetail'));
 const Metrics = React.lazy(() => import('./pages/Metrics'));
@@ -54,6 +55,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<LoadingSpinner size="lg" text="Loading..." />}>
                       <Routes>
                         <Route path="/" element={<Dashboard />} />
+                        <Route path="/chat" element={<Chat />} />
                         <Route path="/alerts" element={<Alerts />} />
                         <Route path="/alerts/:id" element={<AlertDetail />} />
                         <Route path="/metrics" element={<Metrics />} />
