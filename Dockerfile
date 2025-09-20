@@ -35,4 +35,4 @@ EXPOSE 8000
 USER appuser
 
 # Run the application
-CMD ["uvicorn", "src.soc_agent.webapp:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.soc_agent.webapp_phase3:app", "--host", "0.0.0.0", "--port", "8000"]
