@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import ElasticsearchException, NotFoundError
+from elasticsearch.exceptions import NotFoundError
 
 from .config import SETTINGS
 
@@ -209,7 +209,7 @@ class ElasticsearchService:
             if not self.client.indices.exists(index=index_name):
                 self.client.indices.create(index=index_name, body=mapping)
                 logger.info(f"Created Elasticsearch index: {index_name}")
-        except ElasticsearchException as e:
+        except Exception as e:
             logger.error(f"Failed to create index {index_name}: {str(e)}")
     
     def index_document(self, index_name: str, document: Dict[str, Any], 
@@ -232,7 +232,7 @@ class ElasticsearchService:
             )
             
             return response['_id']
-        except ElasticsearchException as e:
+        except Exception as e:
             raise ElasticsearchError(f"Failed to index document: {str(e)}")
     
     def bulk_index(self, index_name: str, documents: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -259,7 +259,7 @@ class ElasticsearchService:
             
             response = self.client.bulk(body=bulk_data)
             return response
-        except ElasticsearchException as e:
+        except Exception as e:
             raise ElasticsearchError(f"Failed to bulk index documents: {str(e)}")
     
     def search(self, index_name: str, query: Dict[str, Any], 
@@ -279,7 +279,7 @@ class ElasticsearchService:
             )
             
             return response
-        except ElasticsearchException as e:
+        except Exception as e:
             raise ElasticsearchError(f"Failed to search documents: {str(e)}")
     
     def get_document(self, index_name: str, doc_id: str) -> Dict[str, Any]:
@@ -298,7 +298,7 @@ class ElasticsearchService:
             return response['_source']
         except NotFoundError:
             raise ElasticsearchError(f"Document {doc_id} not found")
-        except ElasticsearchException as e:
+        except Exception as e:
             raise ElasticsearchError(f"Failed to get document: {str(e)}")
     
     def delete_document(self, index_name: str, doc_id: str) -> bool:
@@ -315,7 +315,7 @@ class ElasticsearchService:
             )
             
             return response['result'] == 'deleted'
-        except ElasticsearchException as e:
+        except Exception as e:
             raise ElasticsearchError(f"Failed to delete document: {str(e)}")
     
     def search_audit_logs(self, query: Dict[str, Any], size: int = 100, 
@@ -345,7 +345,7 @@ class ElasticsearchService:
         
         try:
             return self.client.cluster.health()
-        except ElasticsearchException as e:
+        except Exception as e:
             raise ElasticsearchError(f"Failed to get cluster health: {str(e)}")
     
     def get_index_stats(self, index_name: str) -> Dict[str, Any]:
@@ -356,7 +356,7 @@ class ElasticsearchService:
         try:
             full_index_name = f"{self.index_prefix}-{index_name}"
             return self.client.indices.stats(index=full_index_name)
-        except ElasticsearchException as e:
+        except Exception as e:
             raise ElasticsearchError(f"Failed to get index stats: {str(e)}")
     
     def cleanup_old_indices(self, days: int = None) -> int:
@@ -383,7 +383,7 @@ class ElasticsearchService:
                     deleted_count += 1
             
             return deleted_count
-        except ElasticsearchException as e:
+        except Exception as e:
             raise ElasticsearchError(f"Failed to cleanup old indices: {str(e)}")
     
     def create_search_query(self, search_term: str = "", filters: Dict[str, Any] = None,

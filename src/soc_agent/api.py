@@ -694,15 +694,22 @@ async def mcp_test_exploit_endpoint(
 @api_router.post("/mcp/offensive-test", response_model=Dict[str, Any])
 async def mcp_offensive_test_endpoint(
     target: str = Query(..., description="Target for offensive testing"),
-    test_scenarios: List[Dict[str, Any]] = Query(..., description="Test scenarios to run")
+    test_scenarios: str = Query(..., description="Test scenarios to run (JSON string)")
 ):
     """Run offensive test suite using MCP servers."""
     try:
         if not SETTINGS.enable_offensive_testing:
             raise HTTPException(status_code=403, detail="Offensive testing is disabled")
         
+        # Parse test scenarios from JSON string
+        import json
+        try:
+            test_scenarios_list = json.loads(test_scenarios)
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON in test_scenarios: {e}")
+        
         async with MCPServerRegistry() as mcp_registry:
-            result = await mcp_registry.run_offensive_test_suite(target, test_scenarios)
+            result = await mcp_registry.run_offensive_test_suite(target, test_scenarios_list)
             
             return {
                 "offensive_test_result": result,

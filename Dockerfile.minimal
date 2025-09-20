@@ -15,8 +15,8 @@ RUN useradd -u 10001 -m appuser
 # Set work directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt /app/
+# Copy minimal requirements and install Python dependencies
+COPY requirements-minimal.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
